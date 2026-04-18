@@ -1,18 +1,21 @@
 <html>
+    <head>
+        <style>
+            #result-template {
+                display: none;
+            }
+        </style>
+    </head>
     <body>
         <table>
             <tr>
-                <td>Enemy AC</td>
-                <td><input type="text" value="16" id="enemy-ac" /></td>
-            </tr>
-            <tr>
                 <td>You bonus attack</td>
-                <td><input type="text" value="8" id="enemy-ac" /></td>
+                <td><input type="text" value="8" id="attack-bonus" /></td>
             </tr>
             <tr>
                 <td>Spell level</td>
                 <td>
-                    <select>
+                    <select id="spell-level">
                         <option value="1">1</option>
                         <option value="2">2</option>
                         <option value="3">3</option>
@@ -25,6 +28,23 @@
                     </select>
                 </td>
             </tr>
+            <tr>
+                <td>Advantage</td>
+                <td><input type="checkbox" id="advantage" /></td>
+            </tr>
+            <tr>
+                <td>Critical hit threshold</td>
+                <td><input type="number" value="20" min="1" max="20" id="crit-threshold" /></td>
+            </tr>
+            <tr>
+                <td>Critical hit damage</td>
+                <td>
+                    <select id="crit-damage-type">
+                        <option value="additional-dice">Roll additional dice</option>
+                        <option value="max-damage">Add max damage</option>
+                    </select>
+                </td>
+            </tr>
         </table>
 
         <button id="calculate">Calculate</button>
@@ -32,11 +52,34 @@
         <div>
             <h3>Result</h3>
 
+            <table>
+                <thead>
+                    <tr>
+                        <th>Enemy</th>
+                        <th>Enemy AC</th>
+                        <th>Prob. of rolling attack row</th>
+                        <th>Prob. of hitting the target</th>
+                        <th>Prob. of jumping after hit</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><input type="text" value="Enemy name" /></td>
+                        <td><input type="text" value="16" id="enemy-ac" /></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <button>Add enemy</button>
+
             <div id="result-block">
                 <div id="result-template">
                     <p>Loop #<span class="attack-number"></span></p>
-                    <p>Chance to hit (so far): <span class="hit-chance"></span></p>
-                    <p>Average damage : <span class="average-damage"></span></p>
+                    <p>Chance to hit this target (cumulative): <span class="hit-chance"></span></p>
+                    <p>Average damage: <span class="average-damage"></span></p>
                     <p>Chance to loop: <span class="loop-change"></span></p>
                 </div>
             </div>
@@ -47,10 +90,20 @@
 
     <script type="text/javascript">
         (function() {
-            // TODO: Load all the elements with "ids" using getElementById
+            // TODO: Implement button "Add enemy"
 
             const generateAttackResult = function({attackNumber, hitChance, averageDamage, loopChance}) {
-                // TODO: Generate a new HTML element based on the "result-template", replacing the spans inside
+                const template = document.getElementById('result-template');
+                const clone = template.cloneNode(true);
+                clone.id = ''; // Remove the template ID
+                clone.style.display = 'block';
+
+                clone.querySelector('.attack-number').textContent = attackNumber;
+                clone.querySelector('.hit-chance').textContent = (hitChance * 100).toFixed(2) + '%';
+                clone.querySelector('.average-damage').textContent = averageDamage.toFixed(2);
+                clone.querySelector('.loop-change').textContent = (loopChance * 100).toFixed(2) + '%';
+
+                return clone;
             }
 
             const averageResultOfDice = function({diceAmount, diceSize}) {
@@ -71,18 +124,37 @@
             }
 
             const probabilityOfDuplicatedDices = function({diceAmount, diceSize}) {
-                // TODO: Calculate the probability two or more dices getting the same number
-                // For example, probability of 2d4 returning the same number is 25% (1-1, 2-2, 3-3, 4-4, out of 16 possible results)
+                // Calculate probability of at least 2 dice matching using complement
+                // Easier to calculate: 1 - P(all dice are different)
+                if (diceAmount === 1) return 0;
+                if (diceAmount > diceSize) return 1; // Pigeonhole principle
+
+                let probAllDifferent = 1;
+                for (let i = 0; i < diceAmount; i++) {
+                    probAllDifferent *= (diceSize - i) / diceSize;
+                }
+                return 1 - probAllDifferent;
             }
 
             const probabilityOfAtLeast = function({diceAmount, diceSize, expectedNumber}) {
-                // TODO: Calculate the probability of at least one dice rolling the "expectedNumber" or more, given the diceSize and amount
+                // Probability of a single die NOT rolling expectedNumber or higher
+                const probSingleFail = (expectedNumber - 1) / diceSize;
+                // Probability of ALL dice failing
+                const probAllFail = Math.pow(probSingleFail, diceAmount);
+                // Probability of at least one success
+                return 1 - probAllFail;
             }
 
             const probabilityToHit = function({enemyAc, attackBonus, advantage}) {
-                // TODO: Probability of rolling a d20 + attackBonus having a result equal or bigger than the enemyAc
-                // Use the probabilityOfAtLeast function
-                // If advantage is true, calculate using 2 dices instead of one
+                // Calculate minimum roll needed on the d20
+                const minRollNeeded = enemyAc - attackBonus;
+
+                // Auto-hit if we can't fail, auto-miss if we can't succeed
+                if (minRollNeeded <= 1) return 1.0;
+                if (minRollNeeded > 20) return 0.0;
+
+                const diceAmount = advantage ? 2 : 1;
+                return probabilityOfAtLeast({diceAmount: diceAmount, diceSize: 20, expectedNumber: minRollNeeded});
             }
 
             const probabilityToMiss = function({enemyAc, attackBonus, advantage}) {
@@ -94,17 +166,88 @@
 
             const probabilityToCrit = function({advantage, critThreshold}) {
                 const diceAmount = advantage ? 2 : 1;
-                return probabilityOfAtLeast(diceAmount, 20, critThreshold);
+                return probabilityOfAtLeast({diceAmount: diceAmount, diceSize: 20, expectedNumber: critThreshold});
             }
 
             const calculate = function() {
-                // TODO: Retrieve the values of the fields filled by the user
-                // Based on the maximumAttacks of the spell level selected, generate results via `generateAttackResult`
-                // Each result must be appended to `result-block`
-                // Loop change is calculated based on the amount of damage dices of the spell level resulting in the same number. Use `probabilityOfDuplicatedDices` with dices of size 8
+                // Retrieve field values
+                const enemyAc = parseInt(document.getElementById('enemy-ac').value);
+                const attackBonus = parseInt(document.getElementById('attack-bonus').value);
+                const spellLevel = parseInt(document.getElementById('spell-level').value);
+                const advantage = document.getElementById('advantage').checked;
+                const critThreshold = parseInt(document.getElementById('crit-threshold').value);
+                const critDamageType = document.getElementById('crit-damage-type').value;
+
+                // Calculate constants
+                const maxAttacks = maximumAttacks({chromaticOrbSpellLevel: spellLevel});
+                const numDice = numberOfDamageDices({chromaticOrbSpellLevel: spellLevel});
+                const diceSize = 8; // Chromatic Orb deals d8 damage
+
+                const baseHitChance = probabilityToHit({enemyAc: enemyAc, attackBonus: attackBonus, advantage: advantage});
+                const critChance = probabilityToCrit({advantage: advantage, critThreshold: critThreshold});
+                const loopChance = probabilityOfDuplicatedDices({diceAmount: numDice, diceSize: diceSize});
+
+                // Calculate average damage per hit
+                const baseDamagePerHit = averageResultOfDice({diceAmount: numDice, diceSize: diceSize});
+
+                // Calculate crit damage
+                let critDamageBonus;
+                if (critDamageType === 'additional-dice') {
+                    // Roll additional dice
+                    critDamageBonus = averageResultOfDice({diceAmount: numDice, diceSize: diceSize});
+                } else {
+                    // Add max damage
+                    critDamageBonus = numDice * diceSize;
+                }
+
+                // Average damage accounting for crits
+                const avgDamagePerHit = baseDamagePerHit + (critChance * critDamageBonus);
+
+                // Clear previous results
+                const resultBlock = document.getElementById('result-block');
+                const template = document.getElementById('result-template');
+                resultBlock.innerHTML = '';
+                resultBlock.appendChild(template);
+
+                // Generate results for each loop
+                let totalWeightedDamage = 0;
+                let cumulativeHitChance = 1.0; // Start at 100% for first target
+                let probReachingLoop = 1.0;
+
+                for (let i = 1; i <= maxAttacks; i++) {
+                    // Probability of reaching this loop
+                    if (i > 1) {
+                        probReachingLoop *= loopChance * baseHitChance;
+                        // Cumulative hit chance = P(hit target 1) × P(hit target 2) × ... × P(hit target i)
+                        cumulativeHitChance *= baseHitChance;
+                    }
+
+                    // Average damage for this specific loop (not cumulative)
+                    const loopAvgDamage = avgDamagePerHit * cumulativeHitChance;
+
+                    // Weighted damage contribution
+                    totalWeightedDamage += loopAvgDamage * probReachingLoop;
+
+                    // Generate and append result
+                    const resultElement = generateAttackResult({
+                        attackNumber: i,
+                        hitChance: cumulativeHitChance,
+                        averageDamage: loopAvgDamage,
+                        loopChance: loopChance
+                    });
+                    resultBlock.appendChild(resultElement);
+                }
+
+                // Add overall average damage display
+                const overallDiv = document.createElement('div');
+                overallDiv.innerHTML = '<h4>Overall Expected Damage: ' + totalWeightedDamage.toFixed(2) + '</h4>';
+                overallDiv.style.marginTop = '20px';
+                overallDiv.style.fontWeight = 'bold';
+                resultBlock.insertBefore(overallDiv, resultBlock.firstChild);
             }
 
-            // TODO: Bind function "calculate" to press of the button "calculate"
+            // Bind calculate button
+            document.getElementById('calculate').addEventListener('click', calculate);
         })();
     </script>
 </html>

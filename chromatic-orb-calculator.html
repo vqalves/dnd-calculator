@@ -1,8 +1,22 @@
 <html>
     <head>
         <style>
-            #result-template {
-                display: none;
+            table {
+                border-collapse: collapse;
+                margin: 10px 0;
+            }
+            th, td {
+                border: 1px solid #ccc;
+                padding: 8px;
+                text-align: left;
+            }
+            th {
+                background-color: #f0f0f0;
+                font-weight: bold;
+            }
+            input[type="text"], input[type="number"] {
+                width: 100%;
+                box-sizing: border-box;
             }
         </style>
     </head>
@@ -47,64 +61,91 @@
             </tr>
         </table>
 
+        <table>
+            <thead>
+                <tr>
+                    <th>Enemy</th>
+                    <th>Enemy AC</th>
+
+                    <!-- First enemy is 100%. Second depends of the first, so the probability is hitting the first enemy AND attack jumping on the first enemy -->
+                    <th>Prob. of rolling attack row</th>
+
+                    <!-- Chance to hit the target indivually. Calculate raw considering enemy AC and attack bonus, independent of other enemies -->
+                    <th>Prob. of hitting the target</th>
+
+                    <!-- Multiply chance of hitting the target individually and chance of attack jumping -->
+                    <th>Prob. of hitting + jumping</th>
+
+                    <!-- Consider 1) Chance to roll attack row, 2) change to hit the target and 3) expected damage; those 3 calculate the expected average -->
+                    <th>Average damage</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="enemies-tbody">
+                <tr>
+                    <td><input type="text" value="Enemy 1" class="enemy-name" /></td>
+                    <td><input type="number" value="16" class="enemy-ac" /></td>
+                    <td class="prob-rolling">-</td>
+                    <td class="prob-hitting">-</td>
+                    <td class="prob-hitting-jumping">-</td>
+                    <td class="avg-damage">-</td>
+                    <td><button class="remove-enemy">Remove</button></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <button id="add-enemy">Add enemy</button>
         <button id="calculate">Calculate</button>
 
-        <div>
-            <h3>Result</h3>
-
-            <table>
-                <thead>
-                    <tr>
-                        <th>Enemy</th>
-                        <th>Enemy AC</th>
-                        <th>Prob. of rolling attack row</th>
-                        <th>Prob. of hitting the target</th>
-                        <th>Prob. of jumping after hit</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><input type="text" value="Enemy name" /></td>
-                        <td><input type="text" value="16" id="enemy-ac" /></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                    </tr>
-                </tbody>
-            </table>
-
-            <button>Add enemy</button>
-
-            <div id="result-block">
-                <div id="result-template">
-                    <p>Loop #<span class="attack-number"></span></p>
-                    <p>Chance to hit this target (cumulative): <span class="hit-chance"></span></p>
-                    <p>Average damage: <span class="average-damage"></span></p>
-                    <p>Chance to loop: <span class="loop-change"></span></p>
-                </div>
-            </div>
+        <div id="summary-section" style="margin-top: 20px; display: none;">
+            <h4 id="overall-damage"></h4>
+            <p id="loop-warning" style="color: orange; font-weight: bold;"></p>
         </div>
-
-        
     </body>
 
     <script type="text/javascript">
         (function() {
-            // TODO: Implement button "Add enemy"
+            let enemyCounter = 1;
 
-            const generateAttackResult = function({attackNumber, hitChance, averageDamage, loopChance}) {
-                const template = document.getElementById('result-template');
-                const clone = template.cloneNode(true);
-                clone.id = ''; // Remove the template ID
-                clone.style.display = 'block';
+            // Add enemy functionality
+            const addEnemy = function() {
+                enemyCounter++;
+                const tbody = document.getElementById('enemies-tbody');
+                const newRow = document.createElement('tr');
 
-                clone.querySelector('.attack-number').textContent = attackNumber;
-                clone.querySelector('.hit-chance').textContent = (hitChance * 100).toFixed(2) + '%';
-                clone.querySelector('.average-damage').textContent = averageDamage.toFixed(2);
-                clone.querySelector('.loop-change').textContent = (loopChance * 100).toFixed(2) + '%';
+                newRow.innerHTML = `
+                    <td><input type="text" value="Enemy ${enemyCounter}" class="enemy-name" /></td>
+                    <td><input type="number" value="16" class="enemy-ac" /></td>
+                    <td class="prob-rolling">-</td>
+                    <td class="prob-hitting">-</td>
+                    <td class="prob-hitting-jumping">-</td>
+                    <td class="avg-damage">-</td>
+                    <td><button class="remove-enemy">Remove</button></td>
+                `;
 
-                return clone;
-            }
+                tbody.appendChild(newRow);
+                attachRemoveHandler(newRow.querySelector('.remove-enemy'));
+            };
+
+            // Remove enemy functionality
+            const removeEnemy = function(button) {
+                const row = button.closest('tr');
+                const tbody = document.getElementById('enemies-tbody');
+
+                // Prevent removing the last enemy
+                if (tbody.children.length > 1) {
+                    row.remove();
+                } else {
+                    alert('You must have at least one enemy.');
+                }
+            };
+
+            // Attach remove handler to a button
+            const attachRemoveHandler = function(button) {
+                button.addEventListener('click', function() {
+                    removeEnemy(this);
+                });
+            };
 
             const averageResultOfDice = function({diceAmount, diceSize}) {
                 const perDice = (diceSize + 1) / 2.0;
@@ -170,84 +211,106 @@
             }
 
             const calculate = function() {
-                // Retrieve field values
-                const enemyAc = parseInt(document.getElementById('enemy-ac').value);
+                // Retrieve global field values
                 const attackBonus = parseInt(document.getElementById('attack-bonus').value);
                 const spellLevel = parseInt(document.getElementById('spell-level').value);
                 const advantage = document.getElementById('advantage').checked;
                 const critThreshold = parseInt(document.getElementById('crit-threshold').value);
                 const critDamageType = document.getElementById('crit-damage-type').value;
 
+                // Get all enemy rows
+                const tbody = document.getElementById('enemies-tbody');
+                const enemyRows = Array.from(tbody.children);
+                const numEnemies = enemyRows.length;
+
                 // Calculate constants
                 const maxAttacks = maximumAttacks({chromaticOrbSpellLevel: spellLevel});
                 const numDice = numberOfDamageDices({chromaticOrbSpellLevel: spellLevel});
                 const diceSize = 8; // Chromatic Orb deals d8 damage
-
-                const baseHitChance = probabilityToHit({enemyAc: enemyAc, attackBonus: attackBonus, advantage: advantage});
-                const critChance = probabilityToCrit({advantage: advantage, critThreshold: critThreshold});
-                const loopChance = probabilityOfDuplicatedDices({diceAmount: numDice, diceSize: diceSize});
-
-                // Calculate average damage per hit
-                const baseDamagePerHit = averageResultOfDice({diceAmount: numDice, diceSize: diceSize});
+                const jumpChance = probabilityOfDuplicatedDices({diceAmount: numDice, diceSize: diceSize});
 
                 // Calculate crit damage
+                const critChance = probabilityToCrit({advantage: advantage, critThreshold: critThreshold});
+                const baseDamagePerHit = averageResultOfDice({diceAmount: numDice, diceSize: diceSize});
                 let critDamageBonus;
                 if (critDamageType === 'additional-dice') {
-                    // Roll additional dice
                     critDamageBonus = averageResultOfDice({diceAmount: numDice, diceSize: diceSize});
                 } else {
-                    // Add max damage
                     critDamageBonus = numDice * diceSize;
                 }
-
-                // Average damage accounting for crits
                 const avgDamagePerHit = baseDamagePerHit + (critChance * critDamageBonus);
 
-                // Clear previous results
-                const resultBlock = document.getElementById('result-block');
-                const template = document.getElementById('result-template');
-                resultBlock.innerHTML = '';
-                resultBlock.appendChild(template);
-
-                // Generate results for each loop
+                // Calculate results for each enemy
                 let totalWeightedDamage = 0;
-                let cumulativeHitChance = 1.0; // Start at 100% for first target
                 let probReachingLoop = 1.0;
 
-                for (let i = 1; i <= maxAttacks; i++) {
-                    // Probability of reaching this loop
-                    if (i > 1) {
-                        probReachingLoop *= loopChance * baseHitChance;
-                        // Cumulative hit chance = P(hit target 1) × P(hit target 2) × ... × P(hit target i)
-                        cumulativeHitChance *= baseHitChance;
+                for (let i = 0; i < enemyRows.length; i++) {
+                    const row = enemyRows[i];
+                    const loopNumber = i + 1;
+
+                    // Get enemy AC
+                    const enemyAc = parseInt(row.querySelector('.enemy-ac').value);
+
+                    if (loopNumber <= maxAttacks) {
+                        // Calculate hit probability for this specific enemy
+                        const hitChance = probabilityToHit({enemyAc: enemyAc, attackBonus: attackBonus, advantage: advantage});
+
+                        // Probability of reaching this loop (1 for first loop)
+                        const probRollingAttack = probReachingLoop;
+
+                        // Prob of hitting + jumping = prob reaching loop × prob hitting this enemy
+                        const probHittingAndJumping = probReachingLoop * hitChance * jumpChance;
+
+                        // Average damage = (prob reaching loop) × (prob hitting) × (avg damage per hit)
+                        const avgDamage = probReachingLoop * hitChance * avgDamagePerHit;
+
+                        // Update total weighted damage
+                        totalWeightedDamage += avgDamage;
+
+                        // Update probability for next loop
+                        if (i < enemyRows.length - 1) {
+                            probReachingLoop = probHittingAndJumping;
+                        }
+
+                        // Populate table cells
+                        row.querySelector('.prob-rolling').textContent = (probRollingAttack * 100).toFixed(2) + '%';
+                        row.querySelector('.prob-hitting').textContent = (hitChance * 100).toFixed(2) + '%';
+                        row.querySelector('.prob-hitting-jumping').textContent = (probHittingAndJumping * 100).toFixed(2) + '%';
+                        row.querySelector('.avg-damage').textContent = avgDamage.toFixed(2);
+                    } else {
+                        // No loop available for this enemy
+                        row.querySelector('.prob-rolling').textContent = '0.00%';
+                        row.querySelector('.prob-hitting').textContent = '0.00%';
+                        row.querySelector('.prob-hitting-jumping').textContent = '0.00%';
+                        row.querySelector('.avg-damage').textContent = '0.00';
                     }
-
-                    // Average damage for this specific loop (not cumulative)
-                    const loopAvgDamage = avgDamagePerHit * cumulativeHitChance;
-
-                    // Weighted damage contribution
-                    totalWeightedDamage += loopAvgDamage * probReachingLoop;
-
-                    // Generate and append result
-                    const resultElement = generateAttackResult({
-                        attackNumber: i,
-                        hitChance: cumulativeHitChance,
-                        averageDamage: loopAvgDamage,
-                        loopChance: loopChance
-                    });
-                    resultBlock.appendChild(resultElement);
                 }
 
-                // Add overall average damage display
-                const overallDiv = document.createElement('div');
-                overallDiv.innerHTML = '<h4>Overall Expected Damage: ' + totalWeightedDamage.toFixed(2) + '</h4>';
-                overallDiv.style.marginTop = '20px';
-                overallDiv.style.fontWeight = 'bold';
-                resultBlock.insertBefore(overallDiv, resultBlock.firstChild);
+                // Show summary section
+                const summarySection = document.getElementById('summary-section');
+                summarySection.style.display = 'block';
+
+                // Update overall damage
+                const overallDamage = document.getElementById('overall-damage');
+                overallDamage.textContent = 'Overall Expected Damage: ' + totalWeightedDamage.toFixed(2);
+
+                // Update warning if applicable
+                const loopWarning = document.getElementById('loop-warning');
+                if (numEnemies < maxAttacks) {
+                    loopWarning.textContent = `Warning: You have ${numEnemies} enemy(ies) but ${maxAttacks} loops available. Not all loops are being used.`;
+                } else {
+                    loopWarning.textContent = '';
+                }
             }
 
-            // Bind calculate button
+            // Bind buttons
             document.getElementById('calculate').addEventListener('click', calculate);
+            document.getElementById('add-enemy').addEventListener('click', addEnemy);
+
+            // Attach remove handlers to existing buttons
+            document.querySelectorAll('.remove-enemy').forEach(function(button) {
+                attachRemoveHandler(button);
+            });
         })();
     </script>
 </html>

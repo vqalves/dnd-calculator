@@ -1,0 +1,110 @@
+<html>
+    <body>
+        <table>
+            <tr>
+                <td>Enemy AC</td>
+                <td><input type="text" value="16" id="enemy-ac" /></td>
+            </tr>
+            <tr>
+                <td>You bonus attack</td>
+                <td><input type="text" value="8" id="enemy-ac" /></td>
+            </tr>
+            <tr>
+                <td>Spell level</td>
+                <td>
+                    <select>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                    </select>
+                </td>
+            </tr>
+        </table>
+
+        <button id="calculate">Calculate</button>
+
+        <div>
+            <h3>Result</h3>
+
+            <div id="result-block">
+                <div id="result-template">
+                    <p>Loop #<span class="attack-number"></span></p>
+                    <p>Chance to hit (so far): <span class="hit-chance"></span></p>
+                    <p>Average damage : <span class="average-damage"></span></p>
+                    <p>Chance to loop: <span class="loop-change"></span></p>
+                </div>
+            </div>
+        </div>
+
+        
+    </body>
+
+    <script type="text/javascript">
+        (function() {
+            // TODO: Load all the elements with "ids" using getElementById
+
+            const generateAttackResult = function({attackNumber, hitChance, averageDamage, loopChance}) {
+                // TODO: Generate a new HTML element based on the "result-template", replacing the spans inside
+            }
+
+            const averageResultOfDice = function({diceAmount, diceSize}) {
+                const perDice = (diceSize + 1) / 2.0;
+                return perDice * diceAmount;
+            }
+
+            const averageDamageToEnemy = function({hitChange, diceAmount, diceSize}) {
+                return averageResultOfDice({diceAmount: diceAmount, diceSize: diceSize}) * hitChange;
+            }
+
+            const maximumAttacks = function({chromaticOrbSpellLevel}) {
+                return chromaticOrbSpellLevel + 1;
+            }
+
+            const numberOfDamageDices = function({chromaticOrbSpellLevel}) {
+                return chromaticOrbSpellLevel + 2;
+            }
+
+            const probabilityOfDuplicatedDices = function({diceAmount, diceSize}) {
+                // TODO: Calculate the probability two or more dices getting the same number
+                // For example, probability of 2d4 returning the same number is 25% (1-1, 2-2, 3-3, 4-4, out of 16 possible results)
+            }
+
+            const probabilityOfAtLeast = function({diceAmount, diceSize, expectedNumber}) {
+                // TODO: Calculate the probability of at least one dice rolling the "expectedNumber" or more, given the diceSize and amount
+            }
+
+            const probabilityToHit = function({enemyAc, attackBonus, advantage}) {
+                // TODO: Probability of rolling a d20 + attackBonus having a result equal or bigger than the enemyAc
+                // Use the probabilityOfAtLeast function
+                // If advantage is true, calculate using 2 dices instead of one
+            }
+
+            const probabilityToMiss = function({enemyAc, attackBonus, advantage}) {
+                return 1 - probabilityToHit({
+                    enemyAc: enemyAc, 
+                    attackBonus: attackBonus, 
+                    advantage: advantage});
+            }
+
+            const probabilityToCrit = function({advantage, critThreshold}) {
+                const diceAmount = advantage ? 2 : 1;
+                return probabilityOfAtLeast(diceAmount, 20, critThreshold);
+            }
+
+            const calculate = function() {
+                // TODO: Retrieve the values of the fields filled by the user
+                // Based on the maximumAttacks of the spell level selected, generate results via `generateAttackResult`
+                // Each result must be appended to `result-block`
+                // Loop change is calculated based on the amount of damage dices of the spell level resulting in the same number. Use `probabilityOfDuplicatedDices` with dices of size 8
+            }
+
+            // TODO: Bind function "calculate" to press of the button "calculate"
+        })();
+    </script>
+</html>

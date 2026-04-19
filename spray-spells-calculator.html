@@ -27,18 +27,26 @@
                 <td><input type="text" value="8" id="attack-bonus" /></td>
             </tr>
             <tr>
+                <td>Spell</td>
+                <td>
+                    <input type="checkbox" value="magic-missile">Magic missile</option>
+                    <input type="checkbox" value="scorching-ray">Scorching Ray</option>
+                    <input type="checkbox" value="spellfire-flare">Spellfire Flare</option>
+                </td>
+            </tr>
+            <tr>
                 <td>Spell level</td>
                 <td>
                     <select id="spell-level">
-                        <option value="1">1 (3d8, avg 13.5)</option>
-                        <option value="2">2 (4d8, avg 18)</option>
-                        <option value="3">3 (5d8, avg 22.5)</option>
-                        <option value="4">4 (6d8, avg 27)</option>
-                        <option value="5">5 (7d8, avg 31.5)</option>
-                        <option value="6">6 (8d8, avg 36)</option>
-                        <option value="7">7 (9d8, avg 40.5)</option>
-                        <option value="8">8 (10d8, avg 45)</option>
-                        <option value="9">9 (11d8, avg 49.5)</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
                     </select>
                 </td>
             </tr>
@@ -61,17 +69,15 @@
                 <tr>
                     <th>Enemy</th>
                     <th>Enemy AC</th>
+                    <th>Spell</th>
 
-                    <!-- First enemy is 100%. Second depends of the first, so the probability is hitting the first enemy AND attack jumping on the first enemy -->
-                    <th>Prob. of rolling attack row</th>
+                    <!-- Amount of attacks based on spells selected and spell level -->
+                    <th>Attacks executed</th>
 
-                    <!-- Chance to hit the target indivually. Calculate raw considering enemy AC and attack bonus, independent of other enemies -->
-                    <th>Prob. of hitting the target</th>
+                    <!-- Chance to hit the target individually -->
+                    <th>%Chance of hitting per attack</th>
 
-                    <!-- Multiply chance of hitting the target individually and chance of attack jumping -->
-                    <th>Prob. of hitting + jumping</th>
-
-                    <!-- Consider 1) Chance to roll attack row, 2) change to hit the target and 3) expected damage; those 3 calculate the expected average -->
+                    <!-- Consider chance to hit the target -->
                     <th>Average damage</th>
                     <th></th>
                 </tr>
@@ -80,9 +86,11 @@
                 <tr>
                     <td><input type="text" value="Enemy 1" class="enemy-name" /></td>
                     <td><input type="number" value="16" class="enemy-ac" /></td>
-                    <td class="prob-rolling">-</td>
+                    
+                    <!-- TODO: Every spell selected must display a result row for the enemy -->
+                    <td class="spell-name">-</td>
+                    <td class="attacks-executed">-</td>
                     <td class="prob-hitting">-</td>
-                    <td class="prob-hitting-jumping">-</td>
                     <td class="avg-damage">-</td>
                     <td><button class="remove-enemy">Remove</button></td>
                 </tr>
@@ -91,15 +99,61 @@
 
         <button id="add-enemy">Add enemy</button>
         <button id="calculate">Calculate</button>
-
-        <div id="summary-section" style="margin-top: 20px; display: none;">
-            <h4 id="overall-damage"></h4>
-            <p id="loop-warning" style="color: orange; font-weight: bold;"></p>
-        </div>
     </body>
 
     <script type="text/javascript">
         (function() {
+            const defaultProbabilityToHit = function({enemyAc, attackBonus, advantage}) {
+                // Calculate minimum roll needed on the d20
+                const minRollNeeded = enemyAc - attackBonus;
+
+                // Auto-hit if we can't fail, auto-miss if we can't succeed
+                if (minRollNeeded <= 1) return 1.0;
+                if (minRollNeeded > 20) return 0.0;
+
+                const diceAmount = advantage ? 2 : 1;
+                return probabilityOfAtLeast({diceAmount: diceAmount, diceSize: 20, expectedNumber: minRollNeeded});
+            }
+
+            var spells = [
+                {
+                    "name": "Magic Missile",
+                    "minimumSpellLevel": 1,
+                    "getAttackCount": function({spellLevel}) {
+                        return spellLevel + 3;
+                    },
+                    "getAttackDamage": function({spellLevel}) {
+                        return 3.5;
+                    },
+                    "probabilityToHit": function({enemyAc, attackBonus, advantage}) {
+                        return 1.0;
+                    }
+                },
+                {
+                    "name": "Scorching Ray",
+                    "minimumSpellLevel": 2,
+                    "getAttackCount": function({spellLevel}) {
+                        return spellLevel+1;
+                    },
+                    "getAttackDamage": function({spellLevel}) {
+                        return 7;
+                    },
+                    "probabilityToHit": defaultProbabilityToHit
+                },
+                {
+                    "name": "Spellfire Flare",
+                    "minimumSpellLevel": 1,
+                    "getAttackCount": function({spellLevel}) {
+                        return spellLevel;
+                    },
+                    "getAttackDamage": function({spellLevel}) {
+                        return 11;
+                    },
+                    "probabilityToHit": defaultProbabilityToHit
+                }
+            ];
+
+            // TODO: Reelabore calculations and formulas below from here
             let enemyCounter = 1;
 
             // Add enemy functionality

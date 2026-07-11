@@ -27,41 +27,79 @@
                 <td><input type="text" value="8" id="attack-bonus" /></td>
             </tr>
             <tr>
-                <td>Spell</td>
-                <td>
-                    <input type="checkbox" value="magic-missile">Magic missile</option>
-                    <input type="checkbox" value="scorching-ray">Scorching Ray</option>
-                    <input type="checkbox" value="spellfire-flare">Spellfire Flare</option>
-                </td>
-            </tr>
-            <tr>
-                <td>Spell level</td>
-                <td>
-                    <select id="spell-level">
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
-                        <option value="6">6</option>
-                        <option value="7">7</option>
-                        <option value="8">8</option>
-                        <option value="9">9</option>
-                    </select>
-                </td>
-            </tr>
-            <tr>
                 <td>Advantage</td>
                 <td><input type="checkbox" id="advantage" /></td>
             </tr>
-            <tr>
-                <td>Critical hit threshold</td>
-                <td><input type="number" value="20" min="1" max="20" id="crit-threshold" /></td>
-            </tr>
-            <tr>
-                <td>Additional damage when critical</td>
-                <td><input type="number" value="0" id="crit-damage-type" /></td>
-            </tr>
+        </table>
+
+        <h3>Spells</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Spell</th>
+                    <th>Level</th>
+                    <th>Crit Threshold</th>
+                    <th>Additional Crit Damage</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><label><input type="checkbox" value="magic-missile" class="spell-checkbox"> Magic Missile (1d4+1 per missile)</label></td>
+                    <td class="spell-level-display" data-spell="magic-missile">
+                        <select class="spell-level-select" data-spell="magic-missile">
+                            <option value="1">1 (avg 10.5)</option>
+                            <option value="2">2 (avg 14)</option>
+                            <option value="3">3 (avg 17.5)</option>
+                            <option value="4">4 (avg 21)</option>
+                            <option value="5">5 (avg 24.5)</option>
+                            <option value="6">6 (avg 28)</option>
+                            <option value="7">7 (avg 31.5)</option>
+                            <option value="8">8 (avg 35)</option>
+                            <option value="9">9 (avg 38.5)</option>
+                        </select>
+                        <span class="avg-damage-display"></span>
+                    </td>
+                    <td><input type="number" value="20" min="1" max="20" class="spell-crit-threshold" data-spell="magic-missile" /></td>
+                    <td><input type="number" value="0" class="spell-crit-damage" data-spell="magic-missile" /></td>
+                </tr>
+                <tr>
+                    <td><label><input type="checkbox" value="scorching-ray" class="spell-checkbox"> Scorching Ray (2d6 per missile)</label></td>
+                    <td class="spell-level-display" data-spell="scorching-ray">
+                        <select class="spell-level-select" data-spell="scorching-ray">
+                            <option value="2" selected>2 (avg 21)</option>
+                            <option value="3">3 (avg 28)</option>
+                            <option value="4">4 (avg 35)</option>
+                            <option value="5">5 (avg 42)</option>
+                            <option value="6">6 (avg 49)</option>
+                            <option value="7">7 (avg 56)</option>
+                            <option value="8">8 (avg 63)</option>
+                            <option value="9">9 (avg 70)</option>
+                        </select>
+                        <span class="avg-damage-display"></span>
+                    </td>
+                    <td><input type="number" value="20" min="1" max="20" class="spell-crit-threshold" data-spell="scorching-ray" /></td>
+                    <td><input type="number" value="0" class="spell-crit-damage" data-spell="scorching-ray" /></td>
+                </tr>
+                <tr>
+                    <td><label><input type="checkbox" value="spellfire-flare" class="spell-checkbox"> Spellfire Flare (2d10 per missile)</label></td>
+                    <td class="spell-level-display" data-spell="spellfire-flare">
+                        <select class="spell-level-select" data-spell="spellfire-flare">
+                            <option value="1">1 (avg 11)</option>
+                            <option value="2">2 (avg 22)</option>
+                            <option value="3">3 (avg 33)</option>
+                            <option value="4">4 (avg 44)</option>
+                            <option value="5">5 (avg 55)</option>
+                            <option value="6">6 (avg 66)</option>
+                            <option value="7">7 (avg 77)</option>
+                            <option value="8">8 (avg 88)</option>
+                            <option value="9">9 (avg 99)</option>
+                        </select>
+                        <span class="avg-damage-display"></span>
+                    </td>
+                    <td><input type="number" value="20" min="1" max="20" class="spell-crit-threshold" data-spell="spellfire-flare" /></td>
+                    <td><input type="number" value="0" class="spell-crit-damage" data-spell="spellfire-flare" /></td>
+                </tr>
+            </tbody>
         </table>
 
         <table>
@@ -86,8 +124,6 @@
                 <tr>
                     <td><input type="text" value="Enemy 1" class="enemy-name" /></td>
                     <td><input type="number" value="16" class="enemy-ac" /></td>
-                    
-                    <!-- TODO: Every spell selected must display a result row for the enemy -->
                     <td class="spell-name">-</td>
                     <td class="attacks-executed">-</td>
                     <td class="prob-hitting">-</td>
@@ -115,22 +151,32 @@
                 return probabilityOfAtLeast({diceAmount: diceAmount, diceSize: 20, expectedNumber: minRollNeeded});
             }
 
+            const defaultProbabilityToCrit = function({advantage, critThreshold}) {
+                const diceAmount = advantage ? 2 : 1;
+                return probabilityOfAtLeast({diceAmount: diceAmount, diceSize: 20, expectedNumber: critThreshold});
+            };
+
             var spells = [
                 {
                     "name": "Magic Missile",
+                    "value": "magic-missile",
                     "minimumSpellLevel": 1,
                     "getAttackCount": function({spellLevel}) {
-                        return spellLevel + 3;
+                        return spellLevel + 2;
                     },
                     "getAttackDamage": function({spellLevel}) {
                         return 3.5;
                     },
                     "probabilityToHit": function({enemyAc, attackBonus, advantage}) {
                         return 1.0;
+                    },
+                    "probabilityToCrit": function({advantage, critThreshold}) {
+                        return 0.0;
                     }
                 },
                 {
                     "name": "Scorching Ray",
+                    "value": "scorching-ray",
                     "minimumSpellLevel": 2,
                     "getAttackCount": function({spellLevel}) {
                         return spellLevel+1;
@@ -138,10 +184,12 @@
                     "getAttackDamage": function({spellLevel}) {
                         return 7;
                     },
-                    "probabilityToHit": defaultProbabilityToHit
+                    "probabilityToHit": defaultProbabilityToHit,
+                    "probabilityToCrit": defaultProbabilityToCrit
                 },
                 {
                     "name": "Spellfire Flare",
+                    "value": "spellfire-flare",
                     "minimumSpellLevel": 1,
                     "getAttackCount": function({spellLevel}) {
                         return spellLevel;
@@ -149,11 +197,11 @@
                     "getAttackDamage": function({spellLevel}) {
                         return 11;
                     },
-                    "probabilityToHit": defaultProbabilityToHit
+                    "probabilityToHit": defaultProbabilityToHit,
+                    "probabilityToCrit": defaultProbabilityToCrit
                 }
             ];
 
-            // TODO: Reelabore calculations and formulas below from here
             let enemyCounter = 1;
 
             // Add enemy functionality
@@ -165,9 +213,9 @@
                 newRow.innerHTML = `
                     <td><input type="text" value="Enemy ${enemyCounter}" class="enemy-name" /></td>
                     <td><input type="number" value="16" class="enemy-ac" /></td>
-                    <td class="prob-rolling">-</td>
+                    <td class="spell-name">-</td>
+                    <td class="attacks-executed">-</td>
                     <td class="prob-hitting">-</td>
-                    <td class="prob-hitting-jumping">-</td>
                     <td class="avg-damage">-</td>
                     <td><button class="remove-enemy">Remove</button></td>
                 `;
@@ -196,35 +244,6 @@
                 });
             };
 
-            const averageResultOfDice = function({diceAmount, diceSize}) {
-                const perDice = (diceSize + 1) / 2.0;
-                return perDice * diceAmount;
-            }
-
-            const averageDamageToEnemy = function({hitChange, diceAmount, diceSize}) {
-                return averageResultOfDice({diceAmount: diceAmount, diceSize: diceSize}) * hitChange;
-            }
-
-            const maximumAttacks = function({chromaticOrbSpellLevel}) {
-                return chromaticOrbSpellLevel + 1;
-            }
-
-            const numberOfDamageDices = function({chromaticOrbSpellLevel}) {
-                return chromaticOrbSpellLevel + 2;
-            }
-
-            const probabilityOfDuplicatedDices = function({diceAmount, diceSize}) {
-                // Calculate probability of at least 2 dice matching using complement
-                // Easier to calculate: 1 - P(all dice are different)
-                if (diceAmount === 1) return 0;
-                if (diceAmount > diceSize) return 1; // Pigeonhole principle
-
-                let probAllDifferent = 1;
-                for (let i = 0; i < diceAmount; i++) {
-                    probAllDifferent *= (diceSize - i) / diceSize;
-                }
-                return 1 - probAllDifferent;
-            }
 
             const probabilityOfAtLeast = function({diceAmount, diceSize, expectedNumber}) {
                 // Probability of a single die NOT rolling expectedNumber or higher
@@ -235,115 +254,122 @@
                 return 1 - probAllFail;
             }
 
-            const probabilityToHit = function({enemyAc, attackBonus, advantage}) {
-                // Calculate minimum roll needed on the d20
-                const minRollNeeded = enemyAc - attackBonus;
-
-                // Auto-hit if we can't fail, auto-miss if we can't succeed
-                if (minRollNeeded <= 1) return 1.0;
-                if (minRollNeeded > 20) return 0.0;
-
-                const diceAmount = advantage ? 2 : 1;
-                return probabilityOfAtLeast({diceAmount: diceAmount, diceSize: 20, expectedNumber: minRollNeeded});
-            }
-
-            const probabilityToMiss = function({enemyAc, attackBonus, advantage}) {
-                return 1 - probabilityToHit({
-                    enemyAc: enemyAc, 
-                    attackBonus: attackBonus, 
-                    advantage: advantage});
-            }
-
-            const probabilityToCrit = function({advantage, critThreshold}) {
-                const diceAmount = advantage ? 2 : 1;
-                return probabilityOfAtLeast({diceAmount: diceAmount, diceSize: 20, expectedNumber: critThreshold});
-            }
 
             const calculate = function() {
                 // Retrieve global field values
                 const attackBonus = parseInt(document.getElementById('attack-bonus').value);
-                const spellLevel = parseInt(document.getElementById('spell-level').value);
                 const advantage = document.getElementById('advantage').checked;
-                const critThreshold = parseInt(document.getElementById('crit-threshold').value);
 
-                // Get all enemy rows
+                // Get selected spells with their individual settings
+                const selectedSpellCheckboxes = document.querySelectorAll('.spell-checkbox:checked');
+                const selectedSpells = Array.from(selectedSpellCheckboxes).map(checkbox => {
+                    const spell = spells.find(spell => spell.value === checkbox.value);
+                    if (spell) {
+                        // Get per-spell settings
+                        const spellLevelSelect = document.querySelector(`.spell-level-select[data-spell="${spell.value}"]`);
+                        const critThresholdInput = document.querySelector(`.spell-crit-threshold[data-spell="${spell.value}"]`);
+                        const critDamageInput = document.querySelector(`.spell-crit-damage[data-spell="${spell.value}"]`);
+
+                        const spellLevel = parseInt(spellLevelSelect.value);
+                        const attackCount = spell.getAttackCount({spellLevel: spellLevel});
+                        const damagePerAttack = spell.getAttackDamage({spellLevel: spellLevel});
+                        const avgDamage = attackCount * damagePerAttack;
+
+                        // Update the display format in the spell table
+                        const displaySpan = document.querySelector(`.spell-level-display[data-spell="${spell.value}"] .avg-damage-display`);
+                        displaySpan.textContent = ` (avg ${avgDamage.toFixed(2)})`;
+
+                        return {
+                            ...spell,
+                            spellLevel: spellLevel,
+                            critThreshold: parseInt(critThresholdInput.value) || 20,
+                            additionalCritDamage: parseFloat(critDamageInput.value) || 0
+                        };
+                    }
+                    return null;
+                }).filter(spell => spell !== null);
+
+                // Get all enemy input rows (the rows with inputs)
                 const tbody = document.getElementById('enemies-tbody');
-                const enemyRows = Array.from(tbody.children);
-                const numEnemies = enemyRows.length;
+                const enemyInputRows = Array.from(tbody.querySelectorAll('tr')).filter(row => {
+                    return row.querySelector('.enemy-name') !== null;
+                });
 
-                // Calculate constants
-                const maxAttacks = maximumAttacks({chromaticOrbSpellLevel: spellLevel});
-                const numDice = numberOfDamageDices({chromaticOrbSpellLevel: spellLevel});
-                const diceSize = 8; // Chromatic Orb deals d8 damage
-                const jumpChance = probabilityOfDuplicatedDices({diceAmount: numDice, diceSize: diceSize});
+                // Clear all existing rows in tbody
+                tbody.innerHTML = '';
 
-                // Calculate crit damage
-                const critChance = probabilityToCrit({advantage: advantage, critThreshold: critThreshold});
-                const baseDamagePerHit = averageResultOfDice({diceAmount: numDice, diceSize: diceSize});
-                const additionalCritDamage = parseFloat(document.getElementById('crit-damage-type').value) || 0;
-                const avgDamagePerHit = baseDamagePerHit + (critChance * additionalCritDamage);
+                // If no spells selected, show placeholder
+                if (selectedSpells.length === 0) {
+                    enemyInputRows.forEach(inputData => {
+                        const newRow = document.createElement('tr');
+                        const enemyName = inputData.querySelector('.enemy-name').value;
+                        const enemyAc = inputData.querySelector('.enemy-ac').value;
 
-                // Calculate results for each enemy
-                let totalWeightedDamage = 0;
-                let probReachingLoop = 1.0;
+                        newRow.innerHTML = `
+                            <td><input type="text" value="${enemyName}" class="enemy-name" /></td>
+                            <td><input type="number" value="${enemyAc}" class="enemy-ac" /></td>
+                            <td class="spell-name">-</td>
+                            <td class="attacks-executed">-</td>
+                            <td class="prob-hitting">-</td>
+                            <td class="avg-damage">-</td>
+                            <td><button class="remove-enemy">Remove</button></td>
+                        `;
+                        tbody.appendChild(newRow);
+                        attachRemoveHandler(newRow.querySelector('.remove-enemy'));
+                    });
+                    return;
+                }
 
-                for (let i = 0; i < enemyRows.length; i++) {
-                    const row = enemyRows[i];
-                    const loopNumber = i + 1;
+                // For each enemy, create rows for each selected spell
+                enemyInputRows.forEach((inputData, enemyIndex) => {
+                    const enemyName = inputData.querySelector('.enemy-name').value;
+                    const enemyAc = parseInt(inputData.querySelector('.enemy-ac').value);
 
-                    // Get enemy AC
-                    const enemyAc = parseInt(row.querySelector('.enemy-ac').value);
+                    selectedSpells.forEach((spell, spellIndex) => {
+                        const newRow = document.createElement('tr');
 
-                    if (loopNumber <= maxAttacks) {
-                        // Calculate hit probability for this specific enemy
-                        const hitChance = probabilityToHit({enemyAc: enemyAc, attackBonus: attackBonus, advantage: advantage});
+                        // Check if spell can be cast at this level
+                        if (spell.spellLevel < spell.minimumSpellLevel) {
+                            // Show N/A for invalid spell level
+                            newRow.innerHTML = `
+                                <td>${spellIndex === 0 ? `<input type="text" value="${enemyName}" class="enemy-name" />` : ''}</td>
+                                <td>${spellIndex === 0 ? `<input type="number" value="${enemyAc}" class="enemy-ac" />` : ''}</td>
+                                <td class="spell-name">${spell.name}</td>
+                                <td class="attacks-executed">N/A</td>
+                                <td class="prob-hitting">N/A</td>
+                                <td class="avg-damage">N/A</td>
+                                <td>${spellIndex === 0 ? `<button class="remove-enemy">Remove</button>` : ''}</td>
+                            `;
+                        } else {
+                            // Calculate for this spell
+                            const attackCount = spell.getAttackCount({spellLevel: spell.spellLevel});
+                            const damagePerAttack = spell.getAttackDamage({spellLevel: spell.spellLevel});
+                            const hitChance = spell.probabilityToHit({enemyAc: enemyAc, attackBonus: attackBonus, advantage: advantage});
+                            const critChance = spell.probabilityToCrit({advantage: advantage, critThreshold: spell.critThreshold});
 
-                        // Probability of reaching this loop (1 for first loop)
-                        const probRollingAttack = probReachingLoop;
+                            // Total average damage = attacks × hit chance × (base damage + crit chance × additional crit damage)
+                            const avgDamagePerAttack = damagePerAttack + (critChance * spell.additionalCritDamage);
+                            const totalAvgDamage = attackCount * hitChance * avgDamagePerAttack;
 
-                        // Prob of hitting + jumping = prob reaching loop × prob hitting this enemy
-                        const probHittingAndJumping = probReachingLoop * hitChance * jumpChance;
-
-                        // Average damage = (prob reaching loop) × (prob hitting) × (avg damage per hit)
-                        const avgDamage = probReachingLoop * hitChance * avgDamagePerHit;
-
-                        // Update total weighted damage
-                        totalWeightedDamage += avgDamage;
-
-                        // Update probability for next loop
-                        if (i < enemyRows.length - 1) {
-                            probReachingLoop = probHittingAndJumping;
+                            newRow.innerHTML = `
+                                <td>${spellIndex === 0 ? `<input type="text" value="${enemyName}" class="enemy-name" />` : ''}</td>
+                                <td>${spellIndex === 0 ? `<input type="number" value="${enemyAc}" class="enemy-ac" />` : ''}</td>
+                                <td class="spell-name">${spell.name}</td>
+                                <td class="attacks-executed">${attackCount}</td>
+                                <td class="prob-hitting">${(hitChance * 100).toFixed(2)}%</td>
+                                <td class="avg-damage">${totalAvgDamage.toFixed(2)}</td>
+                                <td>${spellIndex === 0 ? `<button class="remove-enemy">Remove</button>` : ''}</td>
+                            `;
                         }
 
-                        // Populate table cells
-                        row.querySelector('.prob-rolling').textContent = (probRollingAttack * 100).toFixed(2) + '%';
-                        row.querySelector('.prob-hitting').textContent = (hitChance * 100).toFixed(2) + '%';
-                        row.querySelector('.prob-hitting-jumping').textContent = (probHittingAndJumping * 100).toFixed(2) + '%';
-                        row.querySelector('.avg-damage').textContent = avgDamage.toFixed(2);
-                    } else {
-                        // No loop available for this enemy
-                        row.querySelector('.prob-rolling').textContent = '0.00%';
-                        row.querySelector('.prob-hitting').textContent = '0.00%';
-                        row.querySelector('.prob-hitting-jumping').textContent = '0.00%';
-                        row.querySelector('.avg-damage').textContent = '0.00';
-                    }
-                }
+                        tbody.appendChild(newRow);
 
-                // Show summary section
-                const summarySection = document.getElementById('summary-section');
-                summarySection.style.display = 'block';
-
-                // Update overall damage
-                const overallDamage = document.getElementById('overall-damage');
-                overallDamage.textContent = 'Overall Expected Damage: ' + totalWeightedDamage.toFixed(2);
-
-                // Update warning if applicable
-                const loopWarning = document.getElementById('loop-warning');
-                if (numEnemies < maxAttacks) {
-                    loopWarning.textContent = `Warning: You have ${numEnemies} enemy(ies) but ${maxAttacks} loops available. Not all loops are being used.`;
-                } else {
-                    loopWarning.textContent = '';
-                }
+                        // Attach remove handler only for first spell row
+                        if (spellIndex === 0) {
+                            attachRemoveHandler(newRow.querySelector('.remove-enemy'));
+                        }
+                    });
+                });
             }
 
             // Bind buttons

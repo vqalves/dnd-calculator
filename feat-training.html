@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculadora de Treinamento</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #13110f;
+      --surface: #1e1a18;
+      --surface-2: #252120;
+      --surface-3: #2c2826;
+      --border: #3d342c;
+      --border-hi: #574840;
+      --gold: #c9a84c;
+      --gold-light: #e8c96a;
+      --gold-dim: #7a5f28;
+      --text: #f8f2ec;
+      --text-muted: #d0bfaf;
+      --text-dim: #a8957f;
+      --red-bg: rgba(139,46,46,0.15);
+      --red-border: rgba(192,64,64,0.45);
+      --red-text: #e8a8a8;
+      --radius: 8px;
+      --radius-sm: 5px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      padding: 2.5rem 1rem 5rem;
+      line-height: 1.5;
+    }
+
+    .container { max-width: 920px; margin: 0 auto; }
+
+    /* ── Header ── */
+    .header { text-align: center; margin-bottom: 2.5rem; }
+    .header h1 {
+      font-size: 2.1rem;
+      font-weight: 700;
+      color: var(--gold);
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      margin-bottom: 0.35rem;
+    }
+    .header p { color: var(--text-muted); font-size: 0.85rem; letter-spacing: 1px; }
+    .orn { color: var(--gold-dim); margin: 0 0.5rem; }
+
+    /* ── Card ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .card-title {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 1.25rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* ── Grid ── */
+    .grid { display: grid; gap: 1rem; }
+    .g2 { grid-template-columns: repeat(2, 1fr); }
+    .g3 { grid-template-columns: repeat(3, 1fr); }
+    .g6 { grid-template-columns: repeat(6, 1fr); }
+
+    @media (max-width: 660px) {
+      .g6 { grid-template-columns: repeat(3, 1fr); }
+      .g3 { grid-template-columns: 1fr 1fr; }
+      .g2 { grid-template-columns: 1fr; }
+    }
+
+    /* ── Form ── */
+    .field { display: flex; flex-direction: column; gap: 0.4rem; }
+
+    .field-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    input[type="number"],
+    input[type="text"],
+    select {
+      width: 100%;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: var(--radius-sm);
+      padding: 0.6rem 0.75rem;
+      font-size: 0.93rem;
+      font-family: inherit;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+    input[type="number"]:focus,
+    input[type="text"]:focus,
+    select:focus {
+      outline: none;
+      border-color: var(--gold);
+      box-shadow: 0 0 0 2px rgba(201,168,76,0.12);
+    }
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238a7d6e' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.75rem center;
+      padding-right: 2.25rem;
+    }
+
+    /* ── Attribute Boxes ── */
+    .attr-box { text-align: center; }
+    .attr-box .field-label { display: block; text-align: center; }
+    .attr-box input { text-align: center; font-size: 1.15rem; font-weight: 700; padding: 0.5rem 0.25rem; }
+    .attr-mod {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--gold);
+      margin-top: 0.3rem;
+      min-height: 1.3rem;
+    }
+
+    /* ── Checkbox Card ── */
+    .check-card {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.65rem;
+      cursor: pointer;
+      padding: 0.75rem 0.9rem;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      transition: border-color 0.15s;
+      user-select: none;
+    }
+    .check-card:hover { border-color: var(--border-hi); }
+    .check-card input[type="checkbox"] {
+      width: 16px; height: 16px;
+      accent-color: var(--gold);
+      flex-shrink: 0;
+      margin-top: 0.18rem;
+      cursor: pointer;
+    }
+    .check-card.checked { border-color: var(--gold-dim); background: rgba(201,168,76,0.06); }
+    .check-title { font-size: 0.88rem; color: var(--text); font-weight: 500; display: block; }
+    .check-hint { font-size: 0.73rem; color: var(--text-muted); margin-top: 0.15rem; display: block; }
+
+    /* ── Divider ── */
+    .divider { border: none; border-top: 1px solid var(--border); margin: 1.25rem 0; }
+
+    /* ── Tabs ── */
+    .tabs { display: flex; gap: 0.5rem; margin-bottom: -1px; position: relative; z-index: 1; }
+    .tab-btn {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-bottom: none;
+      color: var(--text-muted);
+      padding: 0.65rem 1.5rem;
+      border-radius: 7px 7px 0 0;
+      cursor: pointer;
+      font-size: 0.88rem;
+      font-weight: 500;
+      letter-spacing: 0.3px;
+      transition: color 0.15s, background 0.15s;
+      font-family: inherit;
+    }
+    .tab-btn:hover:not(.active) { color: var(--text); background: var(--surface); }
+    .tab-btn.active {
+      background: var(--surface);
+      border-color: var(--border);
+      border-bottom-color: var(--surface);
+      color: var(--gold);
+      font-weight: 600;
+    }
+
+    .tab-panel {
+      display: none;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 0 var(--radius) var(--radius) var(--radius);
+      padding: 1.5rem;
+    }
+    .tab-panel.active { display: block; }
+
+    /* ── Result Section ── */
+    .result-wrap {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      margin-top: 1.5rem;
+    }
+    .result-title {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 1.25rem;
+    }
+
+    /* ── Stats Row ── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    @media (max-width: 600px) { .stats-row { grid-template-columns: repeat(2, 1fr); } }
+
+    .stat-box {
+      background: var(--surface-3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.9rem 0.75rem;
+      text-align: center;
+    }
+    .stat-val { font-size: 1.85rem; font-weight: 700; color: var(--gold-light); display: block; line-height: 1.1; }
+    .stat-lbl { font-size: 0.67rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; margin-top: 0.3rem; display: block; }
+    .stat-sub { font-size: 0.73rem; color: var(--text-dim); margin-top: 0.2rem; }
+
+    /* ── Roll Box ── */
+    .roll-box {
+      background: var(--surface-3);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--gold-dim);
+      border-radius: var(--radius-sm);
+      padding: 0.85rem 1rem;
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+    }
+    .roll-box strong { color: var(--gold-light); }
+    .roll-box .roll-detail { font-size: 0.78rem; color: var(--text-muted); margin-top: 0.2rem; }
+    .roll-box .roll-cost { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.4rem; }
+    .roll-box .roll-cost strong { color: var(--gold-light); }
+
+    /* ── Comparison Table ── */
+    .comp-label {
+      font-size: 0.67rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 0.6rem;
+    }
+    .comp-wrap { overflow-x: auto; }
+    .comp-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+    .comp-table th {
+      background: var(--surface-3);
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.67rem;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      padding: 0.55rem 0.8rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    .comp-table td {
+      padding: 0.55rem 0.8rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+      white-space: nowrap;
+    }
+    .comp-table tr:last-child td { border-bottom: none; }
+    .comp-table .active-row td { background: rgba(201,168,76,0.07); }
+    .comp-table .active-row td:first-child { border-left: 2px solid var(--gold-dim); padding-left: calc(0.8rem - 2px); }
+    .comp-table .hl { color: var(--gold-light); font-weight: 600; }
+    .comp-table .muted { color: var(--text-muted); }
+    .comp-table .cur-indicator { color: var(--gold); font-size: 0.7rem; margin-left: 0.3rem; }
+
+    /* ── Notices ── */
+    .warn-box {
+      background: var(--red-bg);
+      border: 1px solid var(--red-border);
+      border-radius: var(--radius-sm);
+      padding: 0.75rem 1rem;
+      font-size: 0.85rem;
+      color: var(--red-text);
+      margin-top: 1rem;
+      line-height: 1.55;
+    }
+    .warn-box strong { color: #f0b8b8; }
+
+    .info-note {
+      font-size: 0.79rem;
+      color: var(--text-muted);
+      margin-top: 0.85rem;
+      padding: 0.6rem 0.85rem;
+      background: var(--surface-3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      line-height: 1.55;
+    }
+    .info-note strong { color: var(--text); }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <h1>Calculadora de Treinamento</h1>
+    <p><span class="orn">⚔</span> D&amp;D 5e &mdash; Sistema de Treinamento <span class="orn">⚔</span></p>
+  </div>
+
+  <!-- Character Data -->
+  <div class="card">
+    <div class="card-title">Dados do Personagem</div>
+    <div class="grid g2" style="margin-bottom:1rem;">
+      <div class="field">
+        <span class="field-label">Nome do Personagem</span>
+        <input type="text" id="char-name" placeholder="Nome...">
+      </div>
+      <div class="field">
+        <span class="field-label">Bônus de Proficiência</span>
+        <select id="prof-bonus" onchange="recalcAll()">
+          <option value="2">+2 &nbsp;(Nível 1–4)</option>
+          <option value="3">+3 &nbsp;(Nível 5–8)</option>
+          <option value="4">+4 &nbsp;(Nível 9–12)</option>
+          <option value="5">+5 &nbsp;(Nível 13–16)</option>
+          <option value="6">+6 &nbsp;(Nível 17–20)</option>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <span class="field-label">Atributos</span>
+      <div class="grid g6" style="margin-top:0.25rem;">
+        <div class="attr-box"><span class="field-label">FOR</span><input type="number" id="attr-str" min="1" max="30" value="10" oninput="updateMod('str');recalcAll()"><div class="attr-mod" id="mod-str">+0</div></div>
+        <div class="attr-box"><span class="field-label">DES</span><input type="number" id="attr-dex" min="1" max="30" value="10" oninput="updateMod('dex');recalcAll()"><div class="attr-mod" id="mod-dex">+0</div></div>
+        <div class="attr-box"><span class="field-label">CON</span><input type="number" id="attr-con" min="1" max="30" value="10" oninput="updateMod('con');recalcAll()"><div class="attr-mod" id="mod-con">+0</div></div>
+        <div class="attr-box"><span class="field-label">INT</span><input type="number" id="attr-int" min="1" max="30" value="10" oninput="updateMod('int');recalcAll()"><div class="attr-mod" id="mod-int">+0</div></div>
+        <div class="attr-box"><span class="field-label">SAB</span><input type="number" id="attr-wis" min="1" max="30" value="10" oninput="updateMod('wis');recalcAll()"><div class="attr-mod" id="mod-wis">+0</div></div>
+        <div class="attr-box"><span class="field-label">CAR</span><input type="number" id="attr-cha" min="1" max="30" value="10" oninput="updateMod('cha');recalcAll()"><div class="attr-mod" id="mod-cha">+0</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('atributo',this)">Atributo</button>
+    <button class="tab-btn" onclick="showTab('skill',this)">Skill / Ferramenta</button>
+    <button class="tab-btn" onclick="showTab('feat',this)">Feat</button>
+  </div>
+
+  <!-- ═══════════════════════ TAB: ATRIBUTO ═══════════════════════ -->
+  <div id="tab-atributo" class="tab-panel active">
+    <div class="grid g3">
+      <div class="field">
+        <span class="field-label">Atributo a Treinar</span>
+        <select id="attr-select" onchange="calcAtributo()">
+          <option value="str">Força (FOR)</option>
+          <option value="dex">Destreza (DES)</option>
+          <option value="con">Constituição (CON)</option>
+          <option value="int">Inteligência (INT)</option>
+          <option value="wis">Sabedoria (SAB)</option>
+          <option value="cha">Carisma (CAR)</option>
+        </select>
+      </div>
+      <div class="field" style="grid-column:span 2; justify-content:flex-end;">
+        <span class="field-label">&nbsp;</span>
+        <div id="attr-limit-warn" style="display:none;" class="warn-box" style="margin-top:0;">
+          ⚠ Este atributo já está no limite máximo de 14. Não é possível treinar mais.
+        </div>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="grid g2">
+      <div class="field">
+        <span class="field-label">Esforço</span>
+        <label class="check-card" id="attr-esforco-card">
+          <input type="checkbox" id="attr-esforco" onchange="toggleCard('attr-esforco-card','attr-esforco');calcAtributo()">
+          <div>
+            <span class="check-title">Esforço Extra (16h/dia)</span>
+            <span class="check-hint">Reduz o tempo pela metade &middot; +1 exaustão por semana</span>
+          </div>
+        </label>
+      </div>
+      <div class="field">
+        <span class="field-label">Professor / Tutor</span>
+        <select id="attr-tutor" onchange="calcAtributo()">
+          <option value="none">Sem tutor</option>
+          <option value="novato">Novato &mdash; +4 na rolagem, tempo normal</option>
+          <option value="experiente">Experiente &mdash; +8 na rolagem, ½ do tempo</option>
+          <option value="mestre">Mestre &mdash; +14 na rolagem, ¼ do tempo</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="attr-result"></div>
+  </div>
+
+  <!-- ═══════════════════════ TAB: SKILL ═══════════════════════ -->
+  <div id="tab-skill" class="tab-panel">
+    <div class="grid g3">
+      <div class="field">
+        <span class="field-label">Atributo Associado</span>
+        <select id="skill-attr" onchange="calcSkill()">
+          <option value="str">Força (FOR)</option>
+          <option value="dex">Destreza (DES)</option>
+          <option value="con">Constituição (CON)</option>
+          <option value="int">Inteligência (INT)</option>
+          <option value="wis">Sabedoria (SAB)</option>
+          <option value="cha">Carisma (CAR)</option>
+        </select>
+      </div>
+      <div class="field">
+        <span class="field-label">Objetivo</span>
+        <select id="skill-tipo" onchange="calcSkill()">
+          <option value="prof">Obter Proficiência</option>
+          <option value="exp">Obter Expertise</option>
+        </select>
+      </div>
+      <div class="field">
+        <span class="field-label">Nome da Skill / Ferramenta</span>
+        <input type="text" id="skill-nome" placeholder="Ex: Furtividade, Alquimia…">
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="grid g2">
+      <div class="field">
+        <span class="field-label">Esforço</span>
+        <label class="check-card" id="skill-esforco-card">
+          <input type="checkbox" id="skill-esforco" onchange="toggleCard('skill-esforco-card','skill-esforco');calcSkill()">
+          <div>
+            <span class="check-title">Esforço Extra (16h/dia)</span>
+            <span class="check-hint">Reduz o tempo pela metade &middot; +1 exaustão por semana</span>
+          </div>
+        </label>
+      </div>
+      <div class="field">
+        <span class="field-label">Professor / Tutor</span>
+        <select id="skill-tutor" onchange="calcSkill()">
+          <option value="none">Sem tutor</option>
+          <option value="novato">Novato &mdash; +4 na rolagem, tempo normal</option>
+          <option value="experiente">Experiente &mdash; +8 na rolagem, ½ do tempo</option>
+          <option value="mestre">Mestre &mdash; +14 na rolagem, ¼ do tempo</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="skill-result"></div>
+  </div>
+
+  <!-- ═══════════════════════ TAB: FEAT ═══════════════════════ -->
+  <div id="tab-feat" class="tab-panel">
+    <div class="grid g3">
+      <div class="field">
+        <span class="field-label">Nome do Feat</span>
+        <input type="text" id="feat-nome" placeholder="Ex: Weapon Mastery…">
+      </div>
+      <div class="field">
+        <span class="field-label">Atributo Associado ao Feat</span>
+        <select id="feat-attr" onchange="calcFeat()">
+          <option value="str">Força (FOR)</option>
+          <option value="dex">Destreza (DES)</option>
+          <option value="con">Constituição (CON)</option>
+          <option value="int">Inteligência (INT)</option>
+          <option value="wis">Sabedoria (SAB)</option>
+          <option value="cha">Carisma (CAR)</option>
+        </select>
+      </div>
+      <div class="field">
+        <span class="field-label">Familiaridade com o Personagem</span>
+        <select id="feat-fam" onchange="calcFeat()">
+          <option value="15">Familiar ao personagem (DC 15)</option>
+          <option value="17">Relacionado, não familiar (DC 17)</option>
+          <option value="19">Feat genérico (DC 19)</option>
+          <option value="21">Completamente não relacionado (DC 21)</option>
+        </select>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="grid g2">
+      <div class="field">
+        <span class="field-label">Esforço</span>
+        <label class="check-card" id="feat-esforco-card">
+          <input type="checkbox" id="feat-esforco" onchange="toggleCard('feat-esforco-card','feat-esforco');calcFeat()">
+          <div>
+            <span class="check-title">Esforço Extra (16h/dia)</span>
+            <span class="check-hint">Reduz o tempo pela metade &middot; +1 exaustão por semana</span>
+          </div>
+        </label>
+      </div>
+      <div class="field">
+        <span class="field-label">Professor / Tutor</span>
+        <select id="feat-tutor" onchange="calcFeat()">
+          <option value="none">Sem tutor</option>
+          <option value="novato">Novato &mdash; +4 na rolagem, tempo normal</option>
+          <option value="experiente">Experiente &mdash; +8 na rolagem, ½ do tempo</option>
+          <option value="mestre">Mestre &mdash; +14 na rolagem, ¼ do tempo</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="feat-result"></div>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+const ATTRS = ['str','dex','con','int','wis','cha'];
+
+const TUTOR = {
+  none:       { label:'Sem Tutor',   timeMod:1,    rollBonus:0,  price:0,   xPrice:0 },
+  novato:     { label:'Novato',      timeMod:1,    rollBonus:4,  price:5,   xPrice:15 },
+  experiente: { label:'Experiente',  timeMod:0.5,  rollBonus:8,  price:20,  xPrice:60 },
+  mestre:     { label:'Mestre',      timeMod:0.25, rollBonus:14, price:120, xPrice:360 },
+};
+
+// ── Utilities ────────────────────────────────────────────────────
+
+function score(attr)    { return Math.max(1, parseInt(document.getElementById('attr-'+attr).value) || 10); }
+function mod(s)         { return Math.floor((s - 10) / 2); }
+function attrMod(attr)  { return mod(score(attr)); }
+function prof()         { return parseInt(document.getElementById('prof-bonus').value) || 2; }
+function fmtMod(n)      { return n >= 0 ? '+'+n : ''+n; }
+function fmtGP(gp)      { return gp.toLocaleString('pt-BR') + ' GP'; }
+
+function updateMod(attr) {
+  const m = attrMod(attr);
+  document.getElementById('mod-'+attr).textContent = fmtMod(m);
+}
+
+function showTab(name, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  btn.classList.add('active');
+}
+
+function toggleCard(cardId, checkId) {
+  const checked = document.getElementById(checkId).checked;
+  document.getElementById(cardId).classList.toggle('checked', checked);
+}
+
+// ── Core Calculations ────────────────────────────────────────────
+
+function applyTime(baseDays, tutorKey, effort) {
+  let d = baseDays * TUTOR[tutorKey].timeMod;
+  if (effort) d = d / 2;
+  return Math.max(1, Math.ceil(d));
+}
+
+function rollStats(days) {
+  const weeks = Math.ceil(days / 7);
+  const rolls  = weeks * 2;
+  const needed = Math.ceil(rolls * 3 / 4);
+  return { weeks, rolls, needed };
+}
+
+function cost(days, tutorKey, effort) {
+  if (tutorKey === 'none') return null;
+  const t = TUTOR[tutorKey];
+  return days * 8 * (effort ? t.xPrice : t.price);
+}
+
+// ── Render Result ─────────────────────────────────────────────────
+
+function renderResult({ baseDays, tutorKey, effort, dc, rollMod, dcFormula, note }) {
+  const days  = applyTime(baseDays, tutorKey, effort);
+  const { weeks, rolls, needed } = rollStats(days);
+  const c     = cost(days, tutorKey, effort);
+  const bonus = TUTOR[tutorKey].rollBonus;
+  const total = rollMod + bonus;
+
+  // Roll display
+  const modStr = total !== 0 ? ' ' + fmtMod(total) : '';
+  const rollLine = `1d20${modStr} deve superar DC <strong>${dc}</strong>`;
+  let rollDetail = '';
+  if (bonus > 0) {
+    rollDetail = `${fmtMod(rollMod)} (atributo) + ${fmtMod(bonus)} (tutor) = ${fmtMod(total)} total`;
+  } else if (rollMod !== 0) {
+    rollDetail = `modificador do atributo: ${fmtMod(rollMod)}`;
+  }
+
+  let costLine = '';
+  if (c !== null) {
+    const t = TUTOR[tutorKey];
+    const rate = effort ? t.xPrice : t.price;
+    costLine = `<div class="roll-cost">${days} dias × 8h × ${rate} GP/h = <strong>${fmtGP(c)}</strong></div>`;
+  }
+
+  // Comparison table
+  const rows = Object.entries(TUTOR).map(([key, t]) => {
+    const isActive = key === tutorKey;
+    const nDays  = applyTime(baseDays, key, false);
+    const eDays  = applyTime(baseDays, key, true);
+    const nCost  = key === 'none' ? '—' : fmtGP(nDays * 8 * t.price);
+    const eCost  = key === 'none' ? '—' : fmtGP(eDays * 8 * t.xPrice);
+    const hlN    = isActive && !effort;
+    const hlE    = isActive && effort;
+    const bonus  = t.rollBonus > 0 ? ` <span class="muted">(${fmtMod(t.rollBonus)})</span>` : '';
+    const curN   = hlN ? '<span class="cur-indicator">◀</span>' : '';
+    const curE   = hlE ? '<span class="cur-indicator">◀</span>' : '';
+    return `<tr class="${isActive ? 'active-row' : ''}">
+      <td class="${isActive ? 'hl' : ''}">${t.label}${bonus}</td>
+      <td class="${hlN ? 'hl' : ''}">${nDays} dias${curN}</td>
+      <td class="${hlN ? 'hl' : ' muted'}">${nCost}</td>
+      <td class="${hlE ? 'hl' : ''}">${eDays} dias${curE}</td>
+      <td class="${hlE ? 'hl' : ' muted'}">${eCost}</td>
+    </tr>`;
+  }).join('');
+
+  const exhaustWarn = effort ? `
+    <div class="warn-box">
+      ⚠ <strong>Esforço Extra:</strong> Treinando 16h por dia, você ganha
+      <strong>1 ponto de exaustão ao fim de cada semana</strong>
+      — ${weeks} semana${weeks !== 1 ? 's' : ''} = até <strong>${weeks} ponto${weeks !== 1 ? 's' : ''} de exaustão</strong> acumulado${weeks !== 1 ? 's' : ''}.
+      Todas as rolagens subsequentes são penalizadas pelo nível de exaustão acumulado.
+    </div>` : '';
+
+  const noteHtml = note ? `<div class="info-note">${note}</div>` : '';
+
+  return `
+  <div class="result-wrap">
+    <div class="result-title">Resultado</div>
+
+    <div class="stats-row">
+      <div class="stat-box">
+        <span class="stat-val">${days}</span>
+        <span class="stat-lbl">Dias de Treino</span>
+        <div class="stat-sub">${weeks} semana${weeks !== 1 ? 's' : ''} · 8h/dia</div>
+      </div>
+      <div class="stat-box">
+        <span class="stat-val">${rolls}</span>
+        <span class="stat-lbl">Rolagens</span>
+        <div class="stat-sub">2 por semana</div>
+      </div>
+      <div class="stat-box">
+        <span class="stat-val">${needed}</span>
+        <span class="stat-lbl">Sucessos Mínimos</span>
+        <div class="stat-sub">≥ ¾ de ${rolls}</div>
+      </div>
+      <div class="stat-box">
+        <span class="stat-val">DC ${dc}</span>
+        <span class="stat-lbl">Dificuldade</span>
+        <div class="stat-sub">${dcFormula}</div>
+      </div>
+    </div>
+
+    <div class="roll-box">
+      <div>${rollLine}</div>
+      ${rollDetail ? `<div class="roll-detail">${rollDetail}</div>` : ''}
+      ${costLine}
+      <div class="roll-detail" style="margin-top:0.4rem;">20 natural conta como 2 sucessos</div>
+    </div>
+
+    <div class="comp-label">Comparativo de Opções</div>
+    <div class="comp-wrap">
+      <table class="comp-table">
+        <thead>
+          <tr>
+            <th>Tutor</th>
+            <th>Dias (normal)</th>
+            <th>Custo (normal)</th>
+            <th>Dias (esforço extra)</th>
+            <th>Custo (esforço extra)</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+
+    ${noteHtml}
+    ${exhaustWarn}
+  </div>`;
+}
+
+// ── Tab Calculators ───────────────────────────────────────────────
+
+function calcAtributo() {
+  const attr   = document.getElementById('attr-select').value;
+  const s      = score(attr);
+  const m      = mod(s);
+  const effort = document.getElementById('attr-esforco').checked;
+  const tutor  = document.getElementById('attr-tutor').value;
+  const warnEl = document.getElementById('attr-limit-warn');
+  const resEl  = document.getElementById('attr-result');
+
+  if (s >= 14) {
+    warnEl.style.display = 'block';
+    resEl.innerHTML = '';
+    return;
+  }
+  warnEl.style.display = 'none';
+
+  const baseDays = 45 + s - m;
+  const dc = s + 1;
+
+  resEl.innerHTML = renderResult({
+    baseDays,
+    tutorKey: tutor,
+    effort,
+    dc,
+    rollMod: 0,
+    dcFormula: `score atual + 1`,
+    note: `Fórmula do tempo: 45 + ${s} (score) − ${m} (mod) = <strong>${baseDays} dias base</strong>.
+           Resultado: score <strong>${s} → ${s + 1}</strong>. Limite máximo: 14.`,
+  });
+}
+
+function calcSkill() {
+  const attr   = document.getElementById('skill-attr').value;
+  const tipo   = document.getElementById('skill-tipo').value;
+  const effort = document.getElementById('skill-esforco').checked;
+  const tutor  = document.getElementById('skill-tutor').value;
+  const p      = prof();
+  const m      = attrMod(attr);
+
+  const baseDays = Math.max(1, 30 - m);
+  const profMult = tipo === 'exp' ? 2 : 1;
+  const dc       = 10 + m + p * profMult;
+  const tipoLbl  = tipo === 'exp' ? 'Expertise' : 'Proficiência';
+  const dcFml    = tipo === 'exp'
+    ? `10 + ${m} + 2×${p} (prof)`
+    : `10 + ${m} + ${p} (prof)`;
+
+  document.getElementById('skill-result').innerHTML = renderResult({
+    baseDays,
+    tutorKey: tutor,
+    effort,
+    dc,
+    rollMod: m,
+    dcFormula: dcFml,
+    note: `Objetivo: <strong>${tipoLbl}</strong>.
+           Fórmula do tempo: 30 − ${m} (mod) = <strong>${baseDays} dias base</strong>.`,
+  });
+}
+
+function calcFeat() {
+  const attr   = document.getElementById('feat-attr').value;
+  const dc     = parseInt(document.getElementById('feat-fam').value);
+  const effort = document.getElementById('feat-esforco').checked;
+  const tutor  = document.getElementById('feat-tutor').value;
+  const m      = attrMod(attr);
+
+  const famLabels = {
+    15: 'Familiar ao personagem',
+    17: 'Relacionado, não familiar',
+    19: 'Feat genérico',
+    21: 'Completamente não relacionado',
+  };
+
+  document.getElementById('feat-result').innerHTML = renderResult({
+    baseDays: 15,
+    tutorKey: tutor,
+    effort,
+    dc,
+    rollMod: m,
+    dcFormula: `DC fixo`,
+    note: `Familiaridade: <strong>${famLabels[dc]}</strong> → DC ${dc}.
+           Tempo base: <strong>15 dias fixos</strong> (independe de atributos).`,
+  });
+}
+
+// ── Init ──────────────────────────────────────────────────────────
+
+function recalcAll() {
+  ATTRS.forEach(updateMod);
+  calcAtributo();
+  calcSkill();
+  calcFeat();
+}
+
+ATTRS.forEach(updateMod);
+calcAtributo();
+calcSkill();
+calcFeat();
+</script>
+</body>
+</html>

@@ -77,10 +77,53 @@
     .g3 { grid-template-columns: repeat(3, 1fr); }
     .g6 { grid-template-columns: repeat(6, 1fr); }
 
+    /* ── Character Toolbar ── */
+    .char-toolbar {
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-end;
+      flex-wrap: wrap;
+    }
+    .char-toolbar .field { flex: 1 1 220px; }
+    .char-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+    .btn {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: var(--radius-sm);
+      padding: 0.6rem 1rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .btn:hover { border-color: var(--border-hi); }
+    .btn-secondary { color: var(--gold-light); border-color: var(--gold-dim); }
+    .btn-secondary:hover { border-color: var(--gold); background: rgba(201,168,76,0.08); }
+    .btn-danger { color: var(--red-text); border-color: var(--red-border); }
+    .btn-danger:hover { background: var(--red-bg); }
+
     @media (max-width: 660px) {
       .g6 { grid-template-columns: repeat(3, 1fr); }
       .g3 { grid-template-columns: 1fr 1fr; }
       .g2 { grid-template-columns: 1fr; }
+      .char-toolbar { flex-direction: column; align-items: stretch; }
+      .char-actions { justify-content: stretch; }
+      .char-actions .btn { flex: 1; }
+    }
+
+    @media (max-width: 480px) {
+      body { padding: 1.5rem 0.75rem 4rem; }
+      .header h1 { font-size: 1.5rem; letter-spacing: 2px; }
+      .card, .tab-panel { padding: 1.1rem; }
+      .g3 { grid-template-columns: 1fr; }
+      .g6 { grid-template-columns: repeat(2, 1fr); }
+      .tabs { gap: 0.35rem; }
+      .tab-btn { flex: 1; padding: 0.55rem 0.35rem; font-size: 0.72rem; text-align: center; white-space: normal; line-height: 1.25; }
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
     }
 
     /* ── Form ── */
@@ -324,6 +367,21 @@
     <p><span class="orn">⚔</span> D&amp;D 5e &mdash; Sistema de Treinamento <span class="orn">⚔</span></p>
   </div>
 
+  <!-- Character Selector -->
+  <div class="card" id="character-card">
+    <div class="card-title">Personagens</div>
+    <div class="char-toolbar">
+      <div class="field">
+        <span class="field-label">Personagem Selecionado</span>
+        <select id="char-select" onchange="selectCharacter(this.value)"></select>
+      </div>
+      <div class="char-actions">
+        <button type="button" class="btn btn-secondary" onclick="newCharacter()">+ Novo Personagem</button>
+        <button type="button" class="btn btn-danger" onclick="deleteCharacter()">Excluir</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Character Data -->
   <div class="card">
     <div class="card-title">Dados do Personagem</div>
@@ -533,6 +591,194 @@ const TUTOR = {
   experiente: { label:'Experiente',  timeMod:0.5,  rollBonus:8,  price:20,  xPrice:60 },
   mestre:     { label:'Mestre',      timeMod:0.25, rollBonus:14, price:120, xPrice:360 },
 };
+
+// ── Character Storage ───────────────────────────────────────────
+
+const STORAGE_KEY = 'ddTraining.characters.v1';
+
+let db = { characters: {}, activeId: null };
+
+function genId() {
+  return 'char_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+
+function defaultCharacter(name) {
+  return {
+    name: name || 'Novo Personagem',
+    profBonus: '2',
+    attrs: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
+    tabs: {
+      atributo: { select: 'str', esforco: false, tutor: 'none' },
+      skill:    { attr: 'str', tipo: 'prof', nome: '', esforco: false, tutor: 'none' },
+      feat:     { nome: '', attr: 'str', fam: '15', esforco: false, tutor: 'none' },
+    },
+  };
+}
+
+function loadStorage() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function saveStorage() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+  } catch (e) { /* storage unavailable / full — ignore */ }
+}
+
+function collectFormData() {
+  return {
+    name: document.getElementById('char-name').value,
+    profBonus: document.getElementById('prof-bonus').value,
+    attrs: Object.fromEntries(ATTRS.map(a => [a, document.getElementById('attr-' + a).value])),
+    tabs: {
+      atributo: {
+        select: document.getElementById('attr-select').value,
+        esforco: document.getElementById('attr-esforco').checked,
+        tutor: document.getElementById('attr-tutor').value,
+      },
+      skill: {
+        attr: document.getElementById('skill-attr').value,
+        tipo: document.getElementById('skill-tipo').value,
+        nome: document.getElementById('skill-nome').value,
+        esforco: document.getElementById('skill-esforco').checked,
+        tutor: document.getElementById('skill-tutor').value,
+      },
+      feat: {
+        nome: document.getElementById('feat-nome').value,
+        attr: document.getElementById('feat-attr').value,
+        fam: document.getElementById('feat-fam').value,
+        esforco: document.getElementById('feat-esforco').checked,
+        tutor: document.getElementById('feat-tutor').value,
+      },
+    },
+  };
+}
+
+function setCheckbox(checkId, cardId, value) {
+  const el = document.getElementById(checkId);
+  el.checked = !!value;
+  document.getElementById(cardId).classList.toggle('checked', !!value);
+}
+
+function loadCharacterIntoForm(ch) {
+  document.getElementById('char-name').value = ch.name || '';
+  document.getElementById('prof-bonus').value = ch.profBonus || '2';
+  ATTRS.forEach(a => { document.getElementById('attr-' + a).value = ch.attrs[a] ?? 10; });
+  ATTRS.forEach(updateMod);
+
+  document.getElementById('attr-select').value = ch.tabs.atributo.select;
+  setCheckbox('attr-esforco', 'attr-esforco-card', ch.tabs.atributo.esforco);
+  document.getElementById('attr-tutor').value = ch.tabs.atributo.tutor;
+
+  document.getElementById('skill-attr').value = ch.tabs.skill.attr;
+  document.getElementById('skill-tipo').value = ch.tabs.skill.tipo;
+  document.getElementById('skill-nome').value = ch.tabs.skill.nome || '';
+  setCheckbox('skill-esforco', 'skill-esforco-card', ch.tabs.skill.esforco);
+  document.getElementById('skill-tutor').value = ch.tabs.skill.tutor;
+
+  document.getElementById('feat-nome').value = ch.tabs.feat.nome || '';
+  document.getElementById('feat-attr').value = ch.tabs.feat.attr;
+  document.getElementById('feat-fam').value = ch.tabs.feat.fam;
+  setCheckbox('feat-esforco', 'feat-esforco-card', ch.tabs.feat.esforco);
+  document.getElementById('feat-tutor').value = ch.tabs.feat.tutor;
+}
+
+function renderCharSelect() {
+  const sel = document.getElementById('char-select');
+  sel.innerHTML = Object.entries(db.characters)
+    .map(([id, ch]) => `<option value="${id}"${id === db.activeId ? ' selected' : ''}>${escapeHtml(ch.name || '(sem nome)')}</option>`)
+    .join('');
+}
+
+function updateCharSelectLabel(id, name) {
+  const opt = document.querySelector(`#char-select option[value="${id}"]`);
+  if (opt) opt.textContent = name || '(sem nome)';
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+
+function autoSave() {
+  if (!db.activeId) return;
+  const ch = collectFormData();
+  db.characters[db.activeId] = ch;
+  saveStorage();
+  updateCharSelectLabel(db.activeId, ch.name);
+}
+
+function selectCharacter(id) {
+  if (!db.characters[id] || id === db.activeId) return;
+  autoSave();
+  db.activeId = id;
+  saveStorage();
+  loadCharacterIntoForm(db.characters[id]);
+  recalcAll();
+}
+
+function newCharacter() {
+  autoSave();
+  const id = genId();
+  const name = 'Personagem ' + (Object.keys(db.characters).length + 1);
+  db.characters[id] = defaultCharacter(name);
+  db.activeId = id;
+  saveStorage();
+  renderCharSelect();
+  loadCharacterIntoForm(db.characters[id]);
+  recalcAll();
+  const nameInput = document.getElementById('char-name');
+  nameInput.focus();
+  nameInput.select();
+}
+
+function deleteCharacter() {
+  const ids = Object.keys(db.characters);
+  if (ids.length <= 1) {
+    alert('Não é possível excluir o único personagem.');
+    return;
+  }
+  const ch = db.characters[db.activeId];
+  if (!confirm(`Excluir "${ch.name || 'este personagem'}"? Esta ação não pode ser desfeita.`)) return;
+  delete db.characters[db.activeId];
+  db.activeId = Object.keys(db.characters)[0];
+  saveStorage();
+  renderCharSelect();
+  loadCharacterIntoForm(db.characters[db.activeId]);
+  recalcAll();
+}
+
+function initApp() {
+  const loaded = loadStorage();
+  if (loaded && loaded.characters && Object.keys(loaded.characters).length) {
+    db = loaded;
+    if (!db.activeId || !db.characters[db.activeId]) {
+      db.activeId = Object.keys(db.characters)[0];
+    }
+  } else {
+    const id = genId();
+    db = { characters: { [id]: defaultCharacter('Personagem 1') }, activeId: id };
+  }
+  renderCharSelect();
+  loadCharacterIntoForm(db.characters[db.activeId]);
+  recalcAll();
+
+  document.addEventListener('input', handleAutoSaveEvent);
+  document.addEventListener('change', handleAutoSaveEvent);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') autoSave();
+  });
+  window.addEventListener('pagehide', autoSave);
+}
+
+function handleAutoSaveEvent(e) {
+  if (!e.target || e.target.id === 'char-select') return;
+  autoSave();
+}
 
 // ── Utilities ────────────────────────────────────────────────────
 
@@ -789,10 +1035,7 @@ function recalcAll() {
   calcFeat();
 }
 
-ATTRS.forEach(updateMod);
-calcAtributo();
-calcSkill();
-calcFeat();
+initApp();
 </script>
 </body>
 </html>

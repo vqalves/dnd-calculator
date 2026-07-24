@@ -356,6 +356,19 @@
       line-height: 1.55;
     }
     .info-note strong { color: var(--text); }
+
+    /* ── Stage Header (multi-stage feat results) ── */
+    .stage-header {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--gold-light);
+      margin: 1.5rem 0 0.75rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--border-hi);
+    }
+    .stage-header:first-child { margin-top: 0; }
   </style>
 </head>
 <body>
@@ -553,6 +566,23 @@
       </div>
     </div>
 
+    <div class="info-note" style="margin-top:1rem;">
+      ⚠ <strong>Atenção:</strong> este treinamento só é válido para feats do tipo <strong>General Feat</strong>.
+    </div>
+
+    <div class="grid g2" style="margin-top:1rem;">
+      <div class="field">
+        <span class="field-label">Aumento de Atributo</span>
+        <label class="check-card" id="feat-attrgain-card">
+          <input type="checkbox" id="feat-attrgain" onchange="toggleCard('feat-attrgain-card','feat-attrgain');calcFeat()">
+          <div>
+            <span class="check-title">Feat concede aumento de atributo (+1)</span>
+            <span class="check-hint">Adiciona uma 2ª etapa de 30 dias fixos para o ganho de atributo</span>
+          </div>
+        </label>
+      </div>
+    </div>
+
     <hr class="divider">
 
     <div class="grid g2">
@@ -610,7 +640,7 @@ function defaultCharacter(name) {
     tabs: {
       atributo: { select: 'str', esforco: false, tutor: 'none' },
       skill:    { attr: 'str', tipo: 'prof', nome: '', esforco: false, tutor: 'none' },
-      feat:     { nome: '', attr: 'str', fam: '15', esforco: false, tutor: 'none' },
+      feat:     { nome: '', attr: 'str', fam: '15', attrGain: false, esforco: false, tutor: 'none' },
     },
   };
 }
@@ -652,6 +682,7 @@ function collectFormData() {
         nome: document.getElementById('feat-nome').value,
         attr: document.getElementById('feat-attr').value,
         fam: document.getElementById('feat-fam').value,
+        attrGain: document.getElementById('feat-attrgain').checked,
         esforco: document.getElementById('feat-esforco').checked,
         tutor: document.getElementById('feat-tutor').value,
       },
@@ -684,6 +715,7 @@ function loadCharacterIntoForm(ch) {
   document.getElementById('feat-nome').value = ch.tabs.feat.nome || '';
   document.getElementById('feat-attr').value = ch.tabs.feat.attr;
   document.getElementById('feat-fam').value = ch.tabs.feat.fam;
+  setCheckbox('feat-attrgain', 'feat-attrgain-card', ch.tabs.feat.attrGain);
   setCheckbox('feat-esforco', 'feat-esforco-card', ch.tabs.feat.esforco);
   document.getElementById('feat-tutor').value = ch.tabs.feat.tutor;
 }
@@ -950,15 +982,21 @@ function calcAtributo() {
   const warnEl = document.getElementById('attr-limit-warn');
   const resEl  = document.getElementById('attr-result');
 
-  if (s >= 14) {
+  const maxGain = 14 - s;
+  if (maxGain <= 0) {
     warnEl.style.display = 'block';
     resEl.innerHTML = '';
     return;
   }
   warnEl.style.display = 'none';
 
+  const gain = Math.min(2, maxGain);
   const baseDays = 45 + s - m;
-  const dc = s + 1;
+  const dc = s + 2;
+
+  const capNote = gain < 2
+    ? ` <strong>Atenção:</strong> o ganho normal seria +2, mas como o limite máximo do atributo é 14, o ganho efetivo fica limitado a +${gain}.`
+    : '';
 
   resEl.innerHTML = renderResult({
     baseDays,
@@ -966,9 +1004,9 @@ function calcAtributo() {
     effort,
     dc,
     rollMod: 0,
-    dcFormula: `score atual + 1`,
+    dcFormula: `score atual + 2`,
     note: `Fórmula do tempo: 45 + ${s} (score) − ${m} (mod) = <strong>${baseDays} dias base</strong>.
-           Resultado: score <strong>${s} → ${s + 1}</strong>. Limite máximo: 14.`,
+           Resultado: score <strong>${s} → ${s + gain}</strong>. Limite máximo: 14.${capNote}`,
   });
 }
 
@@ -1001,11 +1039,12 @@ function calcSkill() {
 }
 
 function calcFeat() {
-  const attr   = document.getElementById('feat-attr').value;
-  const dc     = parseInt(document.getElementById('feat-fam').value);
-  const effort = document.getElementById('feat-esforco').checked;
-  const tutor  = document.getElementById('feat-tutor').value;
-  const m      = attrMod(attr);
+  const attr     = document.getElementById('feat-attr').value;
+  const dc       = parseInt(document.getElementById('feat-fam').value);
+  const effort   = document.getElementById('feat-esforco').checked;
+  const tutor    = document.getElementById('feat-tutor').value;
+  const attrGain = document.getElementById('feat-attrgain').checked;
+  const m        = attrMod(attr);
 
   const famLabels = {
     15: 'Familiar ao personagem',
@@ -1014,16 +1053,62 @@ function calcFeat() {
     21: 'Completamente não relacionado',
   };
 
-  document.getElementById('feat-result').innerHTML = renderResult({
-    baseDays: 15,
-    tutorKey: tutor,
-    effort,
-    dc,
-    rollMod: m,
-    dcFormula: `DC fixo`,
-    note: `Familiaridade: <strong>${famLabels[dc]}</strong> → DC ${dc}.
-           Tempo base: <strong>15 dias fixos</strong> (independe de atributos).`,
-  });
+  let html;
+
+  if (!attrGain) {
+    html = renderResult({
+      baseDays: 15,
+      tutorKey: tutor,
+      effort,
+      dc,
+      rollMod: m,
+      dcFormula: `DC fixo`,
+      note: `Familiaridade: <strong>${famLabels[dc]}</strong> → DC ${dc}.
+             Tempo base: <strong>15 dias fixos</strong> (feat sem aumento de atributo).`,
+    });
+  } else {
+    const stage1Html = renderResult({
+      baseDays: 15,
+      tutorKey: tutor,
+      effort,
+      dc,
+      rollMod: m,
+      dcFormula: `DC fixo`,
+      note: `Etapa 1 de 2 &mdash; benefícios do feat, sem o aumento de atributo.
+             Familiaridade: <strong>${famLabels[dc]}</strong> → DC ${dc}. Tempo base: <strong>15 dias fixos</strong>.`,
+    });
+    const stage2Html = renderResult({
+      baseDays: 30,
+      tutorKey: tutor,
+      effort,
+      dc,
+      rollMod: m,
+      dcFormula: `DC fixo`,
+      note: `Etapa 2 de 2 &mdash; aumento de <strong>+1</strong> no atributo associado ao feat.
+             Mesma DC da etapa 1. Tempo base: <strong>30 dias fixos</strong>.`,
+    });
+
+    const days1 = applyTime(15, tutor, effort);
+    const days2 = applyTime(30, tutor, effort);
+    const totalDays = days1 + days2;
+    const cost1 = cost(days1, tutor, effort);
+    const cost2 = cost(days2, tutor, effort);
+    const totalCostLine = (cost1 !== null)
+      ? `<div class="roll-cost">Custo total combinado: <strong>${fmtGP(cost1 + cost2)}</strong></div>`
+      : '';
+
+    html = `
+      <div class="stage-header">Etapa 1 &mdash; Benefícios sem Atributo</div>
+      ${stage1Html}
+      <div class="stage-header">Etapa 2 &mdash; Aumento de Atributo (+1)</div>
+      ${stage2Html}
+      <div class="info-note" style="margin-top:1rem;">
+        <strong>Total combinado (ambas as etapas):</strong> ${totalDays} dias de treino.
+        ${totalCostLine}
+      </div>`;
+  }
+
+  document.getElementById('feat-result').innerHTML = html;
 }
 
 // ── Init ──────────────────────────────────────────────────────────

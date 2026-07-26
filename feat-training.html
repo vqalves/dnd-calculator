@@ -390,6 +390,7 @@
       </div>
       <div class="char-actions">
         <button type="button" class="btn btn-secondary" onclick="newCharacter()">+ Novo Personagem</button>
+        <button type="button" class="btn btn-secondary" onclick="shareCharacter(this)">Compartilhar Link</button>
         <button type="button" class="btn btn-danger" onclick="deleteCharacter()">Excluir</button>
       </div>
     </div>
@@ -614,6 +615,7 @@
 
 <script>
 const ATTRS = ['str','dex','con','int','wis','cha'];
+const ATTR_NAMES = { str: 'Força', dex: 'Destreza', con: 'Constituição', int: 'Inteligência', wis: 'Sabedoria', cha: 'Carisma' };
 
 const TUTOR = {
   none:       { label:'Sem Tutor',   timeMod:1,    rollBonus:0,  price:0,   xPrice:0 },
@@ -622,20 +624,144 @@ const TUTOR = {
   mestre:     { label:'Mestre',      timeMod:0.25, rollBonus:14, price:120, xPrice:360 },
 };
 
+// ── Shareable Link ──────────────────────────────────────────────
+// Encoded as a single comma-separated positional string (no JSON keys,
+// enums stored as small indexes) to keep the query string as short as
+// possible. Free-text fields are individually encodeURIComponent'd so
+// a literal comma inside a name can't be mistaken for a field separator.
+
+const TUTOR_KEYS = ['none', 'novato', 'experiente', 'mestre'];
+const FAM_VALUES = [15, 17, 19, 21];
+const TAB_KEYS   = ['atributo', 'skill', 'feat'];
+
+function buildShareCode() {
+  const ch = collectFormData();
+  const t = ch.tabs;
+  const fields = [
+    encodeURIComponent(ch.name || ''),
+    ch.profBonus,
+    ch.attrs.str, ch.attrs.dex, ch.attrs.con, ch.attrs.int, ch.attrs.wis, ch.attrs.cha,
+    TAB_KEYS.indexOf(currentTab),
+    ATTRS.indexOf(t.atributo.select),
+    t.atributo.esforco ? 1 : 0,
+    TUTOR_KEYS.indexOf(t.atributo.tutor),
+    ATTRS.indexOf(t.skill.attr),
+    t.skill.tipo === 'exp' ? 1 : 0,
+    encodeURIComponent(t.skill.nome || ''),
+    t.skill.esforco ? 1 : 0,
+    TUTOR_KEYS.indexOf(t.skill.tutor),
+    encodeURIComponent(t.feat.nome || ''),
+    ATTRS.indexOf(t.feat.attr),
+    FAM_VALUES.indexOf(parseInt(t.feat.fam)),
+    t.feat.attrGain ? 1 : 0,
+    t.feat.esforco ? 1 : 0,
+    TUTOR_KEYS.indexOf(t.feat.tutor),
+  ];
+  return fields.join(',');
+}
+
+function parseShareCode(code) {
+  try {
+    const f = code.split(',');
+    if (f.length < 23) return null;
+    let i = 0;
+    const next = () => f[i++];
+
+    const name = decodeURIComponent(next() || '');
+    const profBonus = next();
+    const attrs = {
+      str: +next(), dex: +next(), con: +next(),
+      int: +next(), wis: +next(), cha: +next(),
+    };
+    const activeTab = TAB_KEYS[+next()] || 'atributo';
+    const atributo = {
+      select: ATTRS[+next()] || 'str',
+      esforco: next() === '1',
+      tutor: TUTOR_KEYS[+next()] || 'none',
+    };
+    const skill = {
+      attr: ATTRS[+next()] || 'str',
+      tipo: next() === '1' ? 'exp' : 'prof',
+      nome: decodeURIComponent(next() || ''),
+      esforco: next() === '1',
+      tutor: TUTOR_KEYS[+next()] || 'none',
+    };
+    const feat = {
+      nome: decodeURIComponent(next() || ''),
+      attr: ATTRS[+next()] || 'str',
+      fam: String(FAM_VALUES[+next()] || 15),
+      attrGain: next() === '1',
+      esforco: next() === '1',
+      tutor: TUTOR_KEYS[+next()] || 'none',
+    };
+
+    if (!ATTRS.includes(atributo.select) || !ATTRS.includes(skill.attr) || !ATTRS.includes(feat.attr)) return null;
+
+    return { name, profBonus, attrs, activeTab, tabs: { atributo, skill, feat } };
+  } catch (e) {
+    return null;
+  }
+}
+
+function buildShareLink() {
+  const url = new URL(window.location.href);
+  url.hash = '';
+  url.searchParams.set('c', buildShareCode());
+  return url.toString();
+}
+
+function flashButton(btn, text, ms) {
+  const original = btn.textContent;
+  btn.textContent = text;
+  btn.disabled = true;
+  setTimeout(() => { btn.textContent = original; btn.disabled = false; }, ms || 1800);
+}
+
+async function shareCharacter(btn) {
+  const link = buildShareLink();
+  try {
+    await navigator.clipboard.writeText(link);
+    flashButton(btn, 'Link copiado!');
+  } catch (e) {
+    window.prompt('Não foi possível copiar automaticamente. Copie o link abaixo:', link);
+  }
+}
+
+function checkShareLink() {
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('c');
+  if (!code) return;
+  const data = parseShareCode(code);
+  if (!data) return;
+
+  const ch = defaultCharacter(data.name);
+  ch.name = data.name || 'Personagem Compartilhado';
+  ch.profBonus = data.profBonus;
+  ch.attrs = data.attrs;
+  ch.tabs = data.tabs;
+  ch.activeTab = data.activeTab;
+
+  const id = computeCharId(ch, ch.activeTab);
+  if (!db.characters[id]) {
+    db.characters[id] = ch;
+  }
+  db.activeId = id;
+  saveStorage();
+
+  history.replaceState(null, '', window.location.pathname + window.location.hash);
+}
+
 // ── Character Storage ───────────────────────────────────────────
 
 const STORAGE_KEY = 'ddTraining.characters.v1';
 
 let db = { characters: {}, activeId: null };
 
-function genId() {
-  return 'char_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-}
-
 function defaultCharacter(name) {
   return {
     name: name || 'Novo Personagem',
     profBonus: '2',
+    activeTab: 'atributo',
     attrs: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
     tabs: {
       atributo: { select: 'str', esforco: false, tutor: 'none' },
@@ -643,6 +769,56 @@ function defaultCharacter(name) {
       feat:     { nome: '', attr: 'str', fam: '15', attrGain: false, esforco: false, tutor: 'none' },
     },
   };
+}
+
+// ── Character ID ─────────────────────────────────────────────────
+// The ID doubles as the storage key: "{Nome} ({dado relevante da aba ativa})".
+// It is recomputed on every form interaction so the key always reflects
+// the character's current name, active tab and that tab's key field.
+
+function tabDataLabel(ch, tab) {
+  const t = ch.tabs[tab];
+  if (tab === 'skill') {
+    const tipoLbl = t.tipo === 'exp' ? 'Expertise' : 'Proficiência';
+    const nome = (t.nome || '').trim();
+    return nome ? `${tipoLbl} ${nome}` : `${tipoLbl} sem nome`;
+  }
+  if (tab === 'feat') {
+    const nome = (t.nome || '').trim();
+    return nome ? `Feat ${nome}` : 'Feat sem nome';
+  }
+  return `Atributo ${ATTR_NAMES[t.select] || t.select}`;
+}
+
+function computeCharId(ch, tab) {
+  const name = (ch.name || '').trim() || 'Personagem sem nome';
+  return `${name} (${tabDataLabel(ch, tab)})`;
+}
+
+function uniquifyId(baseId, excludeKey) {
+  if (!db.characters[baseId] || baseId === excludeKey) return baseId;
+  let n = 2;
+  let candidate = `${baseId} (${n})`;
+  while (db.characters[candidate] && candidate !== excludeKey) {
+    n++;
+    candidate = `${baseId} (${n})`;
+  }
+  return candidate;
+}
+
+function migrateIds() {
+  const chars = Object.values(db.characters);
+  const oldActiveCh = db.characters[db.activeId];
+  db.characters = {};
+  chars.forEach(ch => {
+    if (!ch.activeTab || !TAB_KEYS.includes(ch.activeTab)) ch.activeTab = 'atributo';
+    const id = uniquifyId(computeCharId(ch, ch.activeTab), null);
+    db.characters[id] = ch;
+    if (ch === oldActiveCh) db.activeId = id;
+  });
+  if (!db.activeId || !db.characters[db.activeId]) {
+    db.activeId = Object.keys(db.characters)[0];
+  }
 }
 
 function loadStorage() {
@@ -664,6 +840,7 @@ function collectFormData() {
   return {
     name: document.getElementById('char-name').value,
     profBonus: document.getElementById('prof-bonus').value,
+    activeTab: currentTab,
     attrs: Object.fromEntries(ATTRS.map(a => [a, document.getElementById('attr-' + a).value])),
     tabs: {
       atributo: {
@@ -722,26 +899,36 @@ function loadCharacterIntoForm(ch) {
 
 function renderCharSelect() {
   const sel = document.getElementById('char-select');
-  sel.innerHTML = Object.entries(db.characters)
-    .map(([id, ch]) => `<option value="${id}"${id === db.activeId ? ' selected' : ''}>${escapeHtml(ch.name || '(sem nome)')}</option>`)
+  sel.innerHTML = Object.keys(db.characters)
+    .map(id => `<option value="${escapeHtml(id)}"${id === db.activeId ? ' selected' : ''}>${escapeHtml(id)}</option>`)
     .join('');
-}
-
-function updateCharSelectLabel(id, name) {
-  const opt = document.querySelector(`#char-select option[value="${id}"]`);
-  if (opt) opt.textContent = name || '(sem nome)';
 }
 
 function escapeHtml(str) {
   return String(str).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 }
 
+function syncTabToActiveChar() {
+  const ch = db.characters[db.activeId];
+  const targetTab = ch.activeTab || 'atributo';
+  const idx = TAB_KEYS.indexOf(targetTab);
+  const tabBtns = document.querySelectorAll('.tab-btn');
+  if (tabBtns[idx] && targetTab !== currentTab) {
+    showTab(targetTab, tabBtns[idx]);
+  }
+}
+
 function autoSave() {
   if (!db.activeId) return;
   const ch = collectFormData();
+  const newId = uniquifyId(computeCharId(ch, ch.activeTab), db.activeId);
+  if (newId !== db.activeId) {
+    delete db.characters[db.activeId];
+    db.activeId = newId;
+  }
   db.characters[db.activeId] = ch;
   saveStorage();
-  updateCharSelectLabel(db.activeId, ch.name);
+  renderCharSelect();
 }
 
 function selectCharacter(id) {
@@ -750,18 +937,22 @@ function selectCharacter(id) {
   db.activeId = id;
   saveStorage();
   loadCharacterIntoForm(db.characters[id]);
+  syncTabToActiveChar();
+  renderCharSelect();
   recalcAll();
 }
 
 function newCharacter() {
   autoSave();
-  const id = genId();
   const name = 'Personagem ' + (Object.keys(db.characters).length + 1);
-  db.characters[id] = defaultCharacter(name);
+  const ch = defaultCharacter(name);
+  ch.activeTab = currentTab;
+  const id = uniquifyId(computeCharId(ch, ch.activeTab), null);
+  db.characters[id] = ch;
   db.activeId = id;
   saveStorage();
   renderCharSelect();
-  loadCharacterIntoForm(db.characters[id]);
+  loadCharacterIntoForm(ch);
   recalcAll();
   const nameInput = document.getElementById('char-name');
   nameInput.focus();
@@ -774,13 +965,13 @@ function deleteCharacter() {
     alert('Não é possível excluir o único personagem.');
     return;
   }
-  const ch = db.characters[db.activeId];
-  if (!confirm(`Excluir "${ch.name || 'este personagem'}"? Esta ação não pode ser desfeita.`)) return;
+  if (!confirm(`Excluir "${db.activeId}"? Esta ação não pode ser desfeita.`)) return;
   delete db.characters[db.activeId];
   db.activeId = Object.keys(db.characters)[0];
   saveStorage();
   renderCharSelect();
   loadCharacterIntoForm(db.characters[db.activeId]);
+  syncTabToActiveChar();
   recalcAll();
 }
 
@@ -791,12 +982,19 @@ function initApp() {
     if (!db.activeId || !db.characters[db.activeId]) {
       db.activeId = Object.keys(db.characters)[0];
     }
+    migrateIds();
   } else {
-    const id = genId();
-    db = { characters: { [id]: defaultCharacter('Personagem 1') }, activeId: id };
+    const ch = defaultCharacter('Personagem 1');
+    const id = computeCharId(ch, ch.activeTab);
+    db = { characters: { [id]: ch }, activeId: id };
   }
+
+  checkShareLink();
+
   renderCharSelect();
   loadCharacterIntoForm(db.characters[db.activeId]);
+  syncTabToActiveChar();
+  renderCharSelect();
   recalcAll();
 
   document.addEventListener('input', handleAutoSaveEvent);
@@ -826,11 +1024,16 @@ function updateMod(attr) {
   document.getElementById('mod-'+attr).textContent = fmtMod(m);
 }
 
+let currentTab = 'atributo';
+
 function showTab(name, btn) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
   btn.classList.add('active');
+  const changed = currentTab !== name;
+  currentTab = name;
+  if (changed) autoSave();
 }
 
 function toggleCard(cardId, checkId) {

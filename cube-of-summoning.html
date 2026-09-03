@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cube of Summoning — Creature Sheets</title>
+<style>
+    :root {
+        --parchment: #fdf1dc;
+        --parchment-edge: #f0e0c4;
+        --ink: #1d1509;
+        --accent: #822000;
+        --accent-soft: #9c4a2f;
+        --page-bg: #e6dcc8;
+        --panel: #fffaf0;
+    }
+    * { box-sizing: border-box; }
+    body {
+        margin: 0;
+        padding: 24px 16px 64px;
+        background: var(--page-bg);
+        color: var(--ink);
+        font-family: 'Bookman Old Style', 'Book Antiqua', Georgia, 'Times New Roman', serif;
+        font-size: 15px;
+        line-height: 1.45;
+    }
+    .wrap { max-width: 1180px; margin: 0 auto; }
+
+    /* ---------- header ---------- */
+    header.item {
+        background: var(--panel);
+        border: 1px solid #c8b48d;
+        border-top: 5px solid var(--accent);
+        padding: 20px 24px;
+        margin-bottom: 22px;
+        box-shadow: 0 1px 4px rgba(0,0,0,.18);
+    }
+    header.item h1 {
+        margin: 0 0 2px;
+        font-size: 30px;
+        font-variant: small-caps;
+        color: var(--accent);
+        letter-spacing: .5px;
+    }
+    header.item .subtitle { font-style: italic; color: #5a4a33; margin-bottom: 12px; }
+    header.item p { margin: 8px 0; }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 4px; }
+    .chip {
+        background: var(--accent);
+        color: #fdf1dc;
+        padding: 4px 12px;
+        font-size: 13px;
+        font-variant: small-caps;
+        letter-spacing: .6px;
+        border-radius: 2px;
+        white-space: nowrap;
+    }
+    .chip b { font-variant: normal; letter-spacing: 0; }
+    .src { font-size: 12.5px; color: #6b5b42; margin-top: 12px; }
+    .src a { color: var(--accent); }
+
+    /* ---------- controls ---------- */
+    .controls {
+        background: var(--panel);
+        border: 1px solid #c8b48d;
+        padding: 14px 18px;
+        margin-bottom: 22px;
+        box-shadow: 0 1px 4px rgba(0,0,0,.12);
+        position: sticky;
+        top: 0;
+        z-index: 20;
+    }
+    .controls .label {
+        font-variant: small-caps;
+        letter-spacing: .8px;
+        color: var(--accent);
+        font-size: 14px;
+        margin-right: 6px;
+    }
+    .btnrow { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; }
+    .btnrow + .btnrow { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #d6c4a2; }
+    button {
+        font-family: inherit;
+        font-size: 13.5px;
+        padding: 5px 12px;
+        border: 1px solid #b09a71;
+        background: #f6ecd8;
+        color: var(--ink);
+        cursor: pointer;
+        border-radius: 2px;
+    }
+    button:hover { background: #ecdfc3; }
+    button.active { background: var(--accent); border-color: var(--accent); color: #fdf1dc; }
+    button.ghost { background: transparent; border-style: dashed; }
+    button .n { font-size: 11.5px; opacity: .7; }
+    .status {
+        margin-top: 10px;
+        font-size: 13.5px;
+        font-style: italic;
+        color: #5a4a33;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    .status.hidden { display: none; }
+
+    /* ---------- group ---------- */
+    .group { margin-bottom: 30px; }
+    .group.hidden { display: none; }
+    .group-head {
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+        border-bottom: 2px solid var(--accent);
+        padding-bottom: 5px;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+    }
+    .die {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px; height: 30px;
+        background: var(--accent);
+        color: #fdf1dc;
+        font-size: 17px;
+        font-weight: bold;
+        clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+        flex: 0 0 auto;
+    }
+    .group-head h2 {
+        margin: 0;
+        font-size: 22px;
+        font-variant: small-caps;
+        color: var(--accent);
+        letter-spacing: .5px;
+    }
+    .group-head .note { font-size: 13px; font-style: italic; color: #6b5b42; }
+
+    /* ---------- stat block ---------- */
+    .sheets { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-start; }
+    .block {
+        flex: 1 1 340px;
+        max-width: 460px;
+        background: var(--parchment);
+        background-image: linear-gradient(180deg, #fdf1dc 0%, #fbecd2 100%);
+        border: 1px solid #d9c9a8;
+        border-left: 4px solid var(--accent);
+        padding: 12px 14px 14px;
+        box-shadow: 0 0 8px rgba(0,0,0,.22);
+        position: relative;
+    }
+    .block.hidden { display: none; }
+    .block { scroll-margin-top: 170px; }
+    .group { scroll-margin-top: 160px; }
+    .block.focused {
+        outline: 3px solid var(--accent-soft);
+        outline-offset: 4px;
+    }
+    .block h3 {
+        margin: 0;
+        font-size: 21px;
+        font-variant: small-caps;
+        color: var(--accent);
+        letter-spacing: .4px;
+        line-height: 1.1;
+    }
+    .block .type { font-style: italic; font-size: 13.5px; margin: 1px 0 6px; }
+    .rule {
+        height: 5px;
+        margin: 6px 0;
+        background: var(--accent);
+        clip-path: polygon(0 0, 100% 0, 99.4% 50%, 100% 100%, 0 100%, .6% 50%);
+    }
+    .rule.thin { height: 3px; }
+    .attr { margin: 3px 0; font-size: 14px; }
+    .attr b { color: var(--accent); font-variant: small-caps; letter-spacing: .4px; }
+    .calc { font-size: 11.5px; color: #7a6647; font-style: italic; }
+
+    table.abilities {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: center;
+        margin: 4px 0;
+        font-size: 13px;
+    }
+    table.abilities th {
+        color: var(--accent);
+        font-variant: small-caps;
+        letter-spacing: .5px;
+        font-size: 12.5px;
+        padding: 2px 0;
+    }
+    table.abilities td { padding: 1px 0; }
+
+    .section-title {
+        font-variant: small-caps;
+        font-size: 16px;
+        color: var(--accent);
+        letter-spacing: .6px;
+        border-bottom: 1px solid var(--accent-soft);
+        margin: 10px 0 5px;
+    }
+    .entry { margin: 5px 0; font-size: 13.8px; }
+    .entry b { font-style: italic; }
+    .entry .hit { font-weight: bold; }
+    .pre { color: var(--accent); font-weight: bold; }
+
+    .dpr {
+        margin-top: 10px;
+        padding: 6px 9px;
+        background: rgba(130,32,0,.08);
+        border-left: 3px solid var(--accent-soft);
+        font-size: 13px;
+    }
+    .dpr b { font-variant: small-caps; letter-spacing: .5px; color: var(--accent); }
+
+    .block .permalink {
+        position: absolute;
+        top: 10px; right: 10px;
+        font-size: 11px;
+        padding: 2px 7px;
+        opacity: .45;
+    }
+    .block:hover .permalink, .block.focused .permalink { opacity: 1; }
+
+    .empty {
+        background: var(--panel);
+        border: 1px dashed #b09a71;
+        padding: 24px;
+        text-align: center;
+        font-style: italic;
+        color: #6b5b42;
+    }
+    .empty.hidden { display: none; }
+
+    footer.notes {
+        margin-top: 34px;
+        font-size: 13px;
+        color: #5a4a33;
+        border-top: 1px solid #c8b48d;
+        padding-top: 12px;
+    }
+    footer.notes b { color: var(--accent); font-variant: small-caps; letter-spacing: .5px; }
+
+    @media print {
+        body { background: #fff; padding: 0; }
+        .controls, .permalink { display: none; }
+        .block { break-inside: avoid; box-shadow: none; }
+    }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="item">
+    <h1>Cube of Summoning</h1>
+    <div class="subtitle">Wondrous Item, Rare &mdash; Dungeon Master&rsquo;s Guide (2024)</div>
+    <p>This Tiny cube looks like a jack-in-the-box. When you wind its crank as a Magic action, a merry tune emits from
+       the box, the lid pops open, a creature appears in the nearest unoccupied space, and the lid closes. The lid
+       can&rsquo;t otherwise be opened.</p>
+    <p>Roll on the Cube of Summoning table to determine which spell the cube casts to summon the creature.
+       <b>The spell is cast at level 5 (save DC 17, +9 attack bonus)</b> and doesn&rsquo;t require Concentration, but you
+       otherwise function as the spell&rsquo;s caster. Once the cube summons a creature, the cube can&rsquo;t do so again
+       until the next dawn.</p>
+    <div class="chips">
+        <span class="chip">Spell level <b>5</b></span>
+        <span class="chip">Spell save DC <b>17</b></span>
+        <span class="chip">Spell attack <b>+9</b></span>
+        <span class="chip">No Concentration</span>
+        <span class="chip">1 / dawn</span>
+    </div>
+    <div class="src">Every stat block below is already resolved for those three numbers &mdash; no &ldquo;+ the spell&rsquo;s
+        level&rsquo;&rdquo; math left to do at the table.
+        Sources: <a href="http://dnd2024.wikidot.com/magic-item:cube-of-summoning" target="_blank" rel="noopener">Cube of Summoning</a>
+        and the six <i>Summon</i> spells (2024 Player&rsquo;s Handbook).</div>
+</header>
+
+<div class="controls">
+    <div class="btnrow" id="roll-filter">
+        <span class="label">1d6 result</span>
+        <button data-roll="all" class="active">All rows <span class="n">(17 sheets)</span></button>
+    </div>
+    <div class="btnrow">
+        <span class="label">Tools</span>
+        <button id="roll-cube">&#127922; Roll the cube</button>
+        <button id="clear-filters" class="ghost">Clear all filters</button>
+        <button id="expand-all" class="ghost">Show every sheet</button>
+    </div>
+    <div class="status hidden" id="status"></div>
+</div>
+
+<div id="groups"></div>
+<div class="empty hidden" id="empty">Nothing matches the current filter.</div>
+
+<footer class="notes">
+    <p><b>How the numbers were derived.</b> Each summon spell&rsquo;s stat block scales off &ldquo;the spell&rsquo;s
+    level&rdquo;. The cube always casts at level&nbsp;5, so AC, Hit Points, the number of attacks
+    (<i>half the spell&rsquo;s level, rounded down</i> &rarr; <b>2</b>), and every damage bonus are fixed. Attack rolls use the
+    cube&rsquo;s <b>+9</b>, and every save the creature forces uses the cube&rsquo;s <b>DC&nbsp;17</b> &mdash; not your own.</p>
+    <p><b>What still depends on you.</b> The creature&rsquo;s Proficiency Bonus equals <i>your</i> PB (it is not used by any
+    number printed above), it understands the languages you know, and you command it verbally. Damage averages are the
+    usual stat-block rounding (down); the &ldquo;all attacks hit&rdquo; line uses exact expected values.</p>
+    <p><b>Linking.</b> <code>?sheet=&lt;id&gt;</code> focuses a single sheet, <code>?roll=&lt;1-6&gt;</code> shows one table row.
+    Use the &#128279; button on any sheet to grab its link.</p>
+</footer>
+
+</div>
+
+<script>
+"use strict";
+
+/* ------------------------------------------------------------------
+   All values below are PRE-CALCULATED for the Cube of Summoning:
+   spell level 5, spell save DC 17, spell attack bonus +9.
+   ------------------------------------------------------------------ */
+
+var ABERRANT_ABIL = [["STR","16","+3"],["DEX","10","+0"],["CON","15","+2"],["INT","16","+3"],["WIS","10","+0"],["CHA","6","-2"]];
+var BEAST_ABIL    = [["STR","18","+4"],["DEX","11","+0"],["CON","16","+3"],["INT","4","-3"],["WIS","14","+2"],["CHA","5","-3"]];
+var CONSTR_ABIL   = [["STR","18","+4"],["DEX","10","+0"],["CON","18","+4"],["INT","14","+2"],["WIS","11","+0"],["CHA","5","-3"]];
+var DRAGON_ABIL   = [["STR","19","+4"],["DEX","14","+2"],["CON","17","+3"],["INT","10","+0"],["WIS","14","+2"],["CHA","14","+2"]];
+var ELEM_ABIL     = [["STR","18","+4"],["DEX","15","+2"],["CON","17","+3"],["INT","4","-3"],["WIS","10","+0"],["CHA","16","+3"]];
+var FEY_ABIL      = [["STR","13","+1"],["DEX","16","+3"],["CON","14","+2"],["INT","14","+2"],["WIS","11","+0"],["CHA","16","+3"]];
+
+function multi(x) { return { n: "Multiattack", d: "The spirit makes <span class='pre'>2</span> " + x + " attacks. <span class='calc'>(half of spell level 5, rounded down)</span>" }; }
+
+var ROWS = [
+{
+  roll: 1, spell: "Summon Aberration", spellLevel: 4, casters: "Warlock, Wizard",
+  note: "Level 4 spell, cast at 5 &mdash; choose Beholderkin, Mind Flayer, or Slaad.",
+  sheets: [
+    {
+      id: "aberrant-beholderkin", name: "Aberrant Spirit (Beholderkin)", type: "Medium Aberration, Neutral",
+      ac: "16", acCalc: "11 + spell level 5", hp: "50", hpCalc: "40 + 10 for the 1 level above 4",
+      speed: "30 ft., Fly 30 ft. (hover)", abil: ABERRANT_ABIL,
+      lines: [["Immunities","Psychic"],["Senses","Darkvision 60 ft., Passive Perception 10"],
+              ["Languages","Deep Speech; understands the languages you know"],
+              ["CR","None (XP 0; PB equals your Proficiency Bonus)"]],
+      actions: [ multi("Eye Ray"),
+        { n: "Eye Ray", d: "<i>Ranged Attack Roll:</i> <span class='hit'>+9</span>, range 150 ft. <i>Hit:</i> <span class='hit'>1d8 + 8 (12) Psychic damage</span>. <span class='calc'>(1d8 + 3 + spell level 5)</span>" } ],
+      dpr: "25 &mdash; 2 Eye Rays at 12.5 each, at 150 ft. range."
+    },
+    {
+      id: "aberrant-mind-flayer", name: "Aberrant Spirit (Mind Flayer)", type: "Medium Aberration, Neutral",
+      ac: "16", acCalc: "11 + spell level 5", hp: "50", hpCalc: "40 + 10 for the 1 level above 4",
+      speed: "30 ft.", abil: ABERRANT_ABIL,
+      lines: [["Immunities","Psychic"],["Senses","Darkvision 60 ft., Passive Perception 10"],
+              ["Languages","Deep Speech; understands the languages you know"],
+              ["CR","None (XP 0; PB equals your Proficiency Bonus)"]],
+      traits: [ { n: "Whispering Aura", d: "At the start of each of the spirit's turns, it emits psionic energy if it doesn't have the Incapacitated condition. <i>Wisdom Saving Throw:</i> <span class='hit'>DC 17</span>, each creature (other than you) within 5 feet of the spirit. <i>Failure:</i> <span class='hit'>2d6 (7) Psychic damage</span>." } ],
+      actions: [ multi("Psychic Slam"),
+        { n: "Psychic Slam", d: "<i>Melee Attack Roll:</i> <span class='hit'>+9</span>, reach 5 ft. <i>Hit:</i> <span class='hit'>1d8 + 8 (12) Psychic damage</span>. <span class='calc'>(1d8 + 3 + spell level 5)</span>" } ],
+      dpr: "25 from 2 slams, plus 7 automatic aura damage to everything within 5 ft."
+    },
+    {
+      id: "aberrant-slaad", name: "Aberrant Spirit (Slaad)", type: "Medium Aberration, Neutral",
+      ac: "16", acCalc: "11 + spell level 5", hp: "50", hpCalc: "40 + 10 for the 1 level above 4",
+      speed: "30 ft.", abil: ABERRANT_ABIL,
+      lines: [["Immunities","Psychic"],["Senses","Darkvision 60 ft., Passive Perception 10"],
+              ["Languages","Deep Speech; understands the languages you know"],
+              ["CR","None (XP 0; PB equals your Proficiency Bonus)"]],
+      traits: [ { n: "Regeneration", d: "The spirit regains 5 Hit Points at the start of its turn if it has at least 1 Hit Point." } ],
+      actions: [ multi("Claw"),
+        { n: "Claw", d: "<i>Melee Attack Roll:</i> <span class='hit'>+9</span>, reach 5 ft. <i>Hit:</i> <span class='hit'>1d10 + 8 (13) Slashing damage</span>, and the target can't regain Hit Points until the start of the spirit's next turn. <span class='calc'>(1d10 + 3 + spell level 5)</span>" } ],
+      dpr: "27 &mdash; 2 claws at 13.5 each, plus 5 self-healing per turn."
+    }
+  ]
+},
+{
+  roll: 2, spell: "Summon Beast", spellLevel: 2, casters: "Druid, Ranger",
+  note: "Level 2 spell, cast at 5 &mdash; choose an environment: Air, Land, or Water.",
+  sheets: [
+    {
+      id: "bestial-air", name: "Bestial Spirit (Air)", type: "Small Beast, Neutral",
+      ac: "16", acCalc: "11 + spell level 5", hp: "35", hpCalc: "20 (Air) + 5 for each of the 3 levels above 2",
+      speed: "30 ft., Fly 60 ft.", abil: BEAST_ABIL,
+      lines: [["Senses","Darkvision 60 ft., Passive Perception 12"],
+              ["Languages","Understands the languages you know"],
+              ["CR","None (XP 0; PB equals your Proficiency Bonus)"]],
+      traits: [ { n: "Flyby", d: "The spirit doesn't provoke Opportunity Attacks when it flies out of an enemy's reach." } ],
+      actions: [ multi("Rend"),
+        { n: "Rend", d: "<i>Melee Attack Roll:</i> <span class='hit'>+9</span>, reach 5 ft. <i>Hit:</i> <span class='hit'>1d8 + 9 (13) Piercing damage</span>. <span class='calc'>(1d8 + 4 + spell level 5)</span>" } ],
+      dpr: "27 &mdash; 2 Rends at 13.5 each. Fly 60 ft. with Flyby: strike and leave."
+    },
+    {
+      id: "bestial-land", name: "Bestial Spirit (Land)", type: "Small Beast, Neutral",
+      ac: "16", acCalc: "11 + spell level 5", hp: "45", hpCalc: "30 (Land) + 5 for each of the 3 levels above 2",
+      speed: "30 ft., Climb 30 ft.", abil: BEAST_ABIL,
+      lines: [["Senses","Darkvision 60 ft., Passive Perception 12"],
+              ["Languages","Understands the languages you know"],
+              ["CR","None (XP 0; PB equals your Proficiency Bonus)"]],
+      traits: [ { n: "Pack Tactics", d: "The spirit has Advantage on an attack roll against a creature if at least one of the spirit's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition." } ],
+      actions: [ multi("Rend"),
+        { n: "Rend", d: "<i>Melee Attack Roll:</i> <span class='hit'>+9</span>, reach 5 ft. <i>Hit:</i> <span class='hit'>1d8 + 9 (13) Piercing damage</span>. <span class='calc'>(1d8 + 4 + spell level 5)</span>" } ],
+      dpr: "27 &mdash; 2 Rends at 13.5 each, usually with Advantage from Pack Tactics."
+    },
+    {
+      id: "bestial-water", name: "Bestial Spirit (Water)", type: "Small Beast, Neutral",
+      ac: "16", acCalc: "11 + spell level 5", hp: "45", hpCalc: "30 (Water) + 5 for each of the 3 levels above 2",
+      speed: "30 ft., Swim 30 ft.", abil: BEAST_ABIL,
+      lines: [["Senses","Darkvision 60 ft., Passive Perception 12"],
+              ["Languages","Understands the languages you know"],
+              ["CR","None (XP 0; PB equals your Proficiency Bonus)"]],
+      traits: [ { n: "Pack Tactics", d: "The spirit has Advantage on an attack roll against a creature if at least one of the spirit's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition." },
+                { n: "Water Breathing", d: "The spirit can breathe only underwater." } ],
+      actions: [ multi("Rend"),
+        { n: "Rend", d: "<i>Melee Attack Roll:</i> <span class='hit'>+9</span>, reach 5 ft. <i>Hit:</i> <span class='hit'>1d8 + 9 (13) Piercing damage</span>. <span class='calc'>(1d8 + 4 + spell level 5)</span>" } ],
+      dpr: "27 &mdash; 2 Rends at 13.5 each. Underwater only: it cannot breathe air."
+    }
+  ]
+},
+{
+  roll: 3, spell: "Summon Construct", spellLevel: 4, casters: "Artificer, Wizard",
+  note: "Level 4 spell, cast at 5 &mdash; choose a material: Clay, Metal, or Stone.",
+  sheets: [
+    {
+      id: "construct-clay", name: "Construct Spirit (Clay)", type: "Medium Construct, Neutral",
+      ac: "18", acCalc: "13 + spell level 5", hp: "55", hpCalc: "40 + 15 for the 1 level above 4",
+      speed: "30 ft.", abil: CONSTR_ABIL,
+      lines: [["Resistances","Poison"],["Immunities","Charmed, Exhaustion, Frightened, Paralyzed, Poisoned"],
+              ["Senses","Darkvision 60 ft., Passive Perception 10"],
+              ["Languages","Understands the languages you know"],
+              ["CR","None (XP 0; PB equals your Proficiency Bonus)"]],
+      actions: [ multi("Slam"),
+        { n: "Slam", d: "<i>Melee Attack Roll:</i> <span class='hit'>+9</span>, reach 5 ft. <i>Hit:</i> <span class='hit'>1d8 + 9 (13) Bludgeoning damage</span>. <span class='calc'>(1d8 + 4 + spell level 5)</span>" } ],
+      reactions: [ { n: "Berserk Lashing", d: "<i>Trigger:</i> The spirit takes damage from a creature. <i>Response:</i> The spirit makes a Slam attack against that creature if possible, or it moves up to half its Speed toward that creature without provoking Opportunity Attacks." } ],
+      dpr: "27 from 2 slams, plus up to 13.5 more per round from the Berserk Lashing reaction."
+    },
+    {
+      id: "construct-metal", name: "Construct Spirit (Metal)", type: "Medium Construct, Neutral",
+      ac: "18", acCalc: "13 + spell level 5", hp: "55", hpCalc: "40 + 15 for the 1 level above 4",
+      speed: "30 ft.", abil: CONSTR_ABIL,
+      lines: [["Resistances","Poison"],["Immunities","Charmed, Exhaustion, Frightened, Paralyzed, Poisoned"],
+              ["Senses","Darkvision 60 ft., Passive Perception 10"],
+              ["Languages","Understands the languages you know"],
+              ["CR","None (XP 0; PB equals your Proficiency Bonus)"]],
+      traits: [ { n: "Heated Body", d: "A creature that hits the spirit with a melee attack, or that starts its turn in a grapple with the spirit, takes <span class='hit'>1d10 (5) Fire damage</span>." } ],
+      actions: [ multi("Slam"),
+        { n: "Slam", d: "<i>Melee Attack Roll:</i> <span class='hit'>+9</span>, reach 5 ft. <i>Hit:</i> <span class='hit'>1d8 + 9 (13) Bludgeoning damage</span>. <span class='calc'>(1d8 + 4 + spell level 5)</span>" } ],
+      dpr: "27 from 2 slams, plus 5.5 back to every melee attacker that hits it."
+    },
+    {
+      id: "construct-stone", name: "Construct Spirit (Stone)", type: "Medium Construct, Neutral",
+      ac: "18", acCalc: "13 + spell level 5", hp: "55", hpCalc: "40 + 15 for the 1 level above 4",
+      speed: "30 ft.", abil: CONSTR_ABIL,
+      lines: [["Resistances","Poison"],["Immunities","Charmed, Exhaustion, Frightened, Paralyzed, Poisoned"],
+              ["Senses","Darkvision 60 ft., Passive Perception 10"],
+              ["Languages","Understands the languages you know"],
+              ["CR","None (XP 0; PB equals your Proficiency Bonus)"]],
+      traits: [ { n: "Stony Lethargy", d: "When a creature starts its turn within 10 feet of the spirit, the spirit can target it with magical energy if the spirit can see it. <i>Wisdom Saving Throw:</i> <span class='hit'>DC 17</span>, the target. <i>Failure:</i> Until the start of its next turn, the target can't make Opportunity Attacks, and its Speed is halved." } ],
+      actions: [ multi("Slam"),
+        { n: "Slam", d: "<i>Melee Attack Roll:</i> <span class='hit'>+9</span>, reach 5 ft. <i>Hit:</i> <span class='hit'>1d8 + 9 (13) Bludgeoning damage</span>. <span class='calc'>(1d8 + 4 + spell level 5)</span>" } ],
+      dpr: "27 &mdash; 2 slams at 13.5 each, plus a DC 17 Wis save each round to slow one nearby enemy."
+    }
+  ]
+},
+{
+  roll: 4, spell: "Summon Dragon", spellLevel: 5, casters: "Wizard",
+  note: "Level 5 spell, cast at its base level &mdash; one form, with a damage type of your choice.",
+  sheets: [
+    {
+      id: "draconic-spirit", name: "Draconic Spirit", type: "Large Dragon, Neutral",
+      ac: "19", acCalc: "14 + spell level 5", hp: "50", hpCalc: "50 base &mdash; the cube casts at the spell&rsquo;s own level",
+      speed: "30 ft., Fly 60 ft., Swim 30 ft.", abil: DRAGON_ABIL,
+      lines: [["Resistances","Acid, Cold, Fire, Lightning, Poison"],
+              ["Immunities","Charmed, Frightened, Poisoned"],
+              ["Senses","Blindsight 30 ft., Darkvision 60 ft., Passive Perception 12"],
+              ["Languages","Draconic; understands the languages you know"],
+              ["CR","None (XP 0; PB equals your Proficiency Bonus)"]],
+      traits: [ { n: "Shared Resistances", d: "When you summon the spirit, choose one of its Resistances. You have Resistance to the chosen damage type until the spell ends." } ],
+      actions: [
+        { n: "Multiattack", d: "The spirit makes <span class='pre'>2</span> Rend attacks and uses Breath Weapon. <span class='calc'>(half of spell level 5, rounded down)</span>" },
+        { n: "Rend", d: "<i>Melee Attack Roll:</i> <span class='hit'>+9</span>, reach 10 ft. <i>Hit:</i> <span class='hit'>1d6 + 9 (12) Piercing damage</span>. <span class='calc'>(1d6 + 4 + spell level 5)</span>" },
+        { n: "Breath Weapon", d: "<i>Dexterity Saving Throw:</i> <span class='hit'>DC 17</span>, each creature in a 30-foot Cone. <i>Failure:</i> <span class='hit'>2d6 (7) damage</span> of a type this spirit has Resistance to (your choice when you cast the spell). <i>Success:</i> Half damage. <span class='calc'>(usable every round &mdash; it is part of Multiattack)</span>" } ],
+      dpr: "32 against one target (2 Rends at 12.5 + 7 breath), and the breath hits every creature in the cone every round."
+    }
+  ]
+},
+{
+  roll: 5, spell: "Summon Elemental", spellLevel: 4, casters: "Druid, Ranger, Wizard",
+  note: "Level 4 spell, cast at 5 &mdash; choose an element: Air, Earth, Fire, or Water.",
+  sheets: [
+    {
+      id: "elemental-air", name: "Elemental Spirit (Air)", type: "Medium Elemental, Neutral",
+      ac: "16", acCalc: "11 + spell level 5", hp: "60", hpCalc: "50 + 10 for the 1 level above 4",
+      speed: "40 ft., Fly 40 ft. (hover)", abil: ELEM_ABIL,
+      lines: [["Resistances","Lightning, Thunder"],
+              ["Immunities","Poison; Exhaustion, Paralyzed, Petrified, Poisoned"],
+              ["Senses","Darkvision 60 ft., Passive Perception 10"],
+              ["Languages","Primordial; understands the languages you know"],
+              ["CR","None (XP 0; PB equals your Proficiency Bonus)"]],
+      traits: [ { n: "Amorphous Form", d: "The spirit can move through a space as narrow as 1 inch wide without it counting as Difficult Terrain." } ],
+      actions: [ multi("Slam"),
+        { n: "Slam", d: "<i>Melee Attack Roll:</i> <span class='hit'>+9</span>, reach 5 ft. <i>Hit:</i> <span class='hit'>1d10 + 9 (14) Lightning damage</span>. <span class='calc'>(1d10 + 4 + spell level 5)</span>" } ],
+      dpr: "29 &mdash; 2 slams at 14.5 each. Highest damage of the elementals&rsquo; tier, hovering at Fly 40."
+    },
+    {
+      id: "elemental-earth", name: "Elemental Spirit (Earth)", type: "Medium Elemental, Neutral",
+      ac: "16", acCalc: "11 + spell level 5", hp: "60", hpCalc: "50 + 10 for the 1 level above 4",
+      speed: "40 ft., Burrow 40 ft.", abil: ELEM_ABIL,
+      lines: [["Resistances","Piercing, Slashing"],
+              ["Immunities","Poison; Exhaustion, Paralyzed, Petrified, Poisoned"],
+              ["Senses","Darkvision 60 ft., Passive Perception 10"],
+              ["Languages","Primordial; understands the languages you know"],
+              ["CR","None (XP 0; PB equals your Proficiency Bonus)"]],
+      actions: [ multi("Slam"),
+        { n: "Slam", d: "<i>Melee Attack Roll:</i> <span class='hit'>+9</span>, reach 5 ft. <i>Hit:</i> <span class='hit'>1d10 + 9 (14) Bludgeoning damage</span>. <span class='calc'>(1d10 + 4 + spell level 5)</span>" } ],
+      dpr: "29 &mdash; 2 slams at 14.5 each. Resistance to Piercing and Slashing makes it the toughest front-liner."
+    },
+    {
+      id: "elemental-fire", name: "Elemental Spirit (Fire)", type: "Medium Elemental, Neutral",
+      ac: "16", acCalc: "11 + spell level 5", hp: "60", hpCalc: "50 + 10 for the 1 level above 4",
+      speed: "40 ft.", abil: ELEM_ABIL,
+      lines: [["Immunities","Fire, Poison; Exhaustion, Paralyzed, Petrified, Poisoned"],
+              ["Senses","Darkvision 60 ft., Passive Perception 10"],
+              ["Languages","Primordial; understands the languages you know"],
+              ["CR","None (XP 0; PB equals your Proficiency Bonus)"]],
+      traits: [ { n: "Amorphous Form", d: "The spirit can move through a space as narrow as 1 inch wide without it counting as Difficult Terrain." } ],
+      actions: [ multi("Slam"),
+        { n: "Slam", d: "<i>Melee Attack Roll:</i> <span class='hit'>+9</span>, reach 5 ft. <i>Hit:</i> <span class='hit'>1d10 + 9 (14) Fire damage</span>. <span class='calc'>(1d10 + 4 + spell level 5)</span>" } ],
+      dpr: "29 &mdash; 2 slams at 14.5 each. The only one of the four with a damage <i>Immunity</i>."
+    },
+    {
+      id: "elemental-water", name: "Elemental Spirit (Water)", type: "Medium Elemental, Neutral",
+      ac: "16", acCalc: "11 + spell level 5", hp: "60", hpCalc: "50 + 10 for the 1 level above 4",
+      speed: "40 ft., Swim 40 ft.", abil: ELEM_ABIL,
+      lines: [["Resistances","Acid"],
+              ["Immunities","Poison; Exhaustion, Paralyzed, Petrified, Poisoned"],
+              ["Senses","Darkvision 60 ft., Passive Perception 10"],
+              ["Languages","Primordial; understands the languages you know"],
+              ["CR","None (XP 0; PB equals your Proficiency Bonus)"]],
+      traits: [ { n: "Amorphous Form", d: "The spirit can move through a space as narrow as 1 inch wide without it counting as Difficult Terrain." } ],
+      actions: [ multi("Slam"),
+        { n: "Slam", d: "<i>Melee Attack Roll:</i> <span class='hit'>+9</span>, reach 5 ft. <i>Hit:</i> <span class='hit'>1d10 + 9 (14) Cold damage</span>. <span class='calc'>(1d10 + 4 + spell level 5)</span>" } ],
+      dpr: "29 &mdash; 2 slams at 14.5 each, with Swim 40 ft."
+    }
+  ]
+},
+{
+  roll: 6, spell: "Summon Fey", spellLevel: 3, casters: "Druid, Ranger, Warlock, Wizard",
+  note: "Level 3 spell, cast at 5 &mdash; choose a mood: Fuming, Mirthful, or Tricksy.",
+  sheets: [
+    {
+      id: "fey-fuming", name: "Fey Spirit (Fuming)", type: "Small Fey, Neutral",
+      ac: "17", acCalc: "12 + spell level 5", hp: "50", hpCalc: "30 + 10 for each of the 2 levels above 3",
+      speed: "30 ft., Fly 30 ft.", abil: FEY_ABIL,
+      lines: [["Immunities","Charmed"],["Senses","Darkvision 60 ft., Passive Perception 10"],
+              ["Languages","Sylvan; understands the languages you know"],
+              ["CR","None (XP 0; PB equals your Proficiency Bonus)"]],
+      actions: [ multi("Fey Blade"),
+        { n: "Fey Blade", d: "<i>Melee Attack Roll:</i> <span class='hit'>+9</span>, reach 5 ft. <i>Hit:</i> <span class='hit'>2d6 + 8 (15) Force damage</span>. <span class='calc'>(2d6 + 3 + spell level 5)</span>" } ],
+      bonus: [ { n: "Fey Step (Fuming)", d: "The spirit teleports up to 30 feet to an unoccupied space it can see. Then it has <b>Advantage on the next attack roll it makes before the end of this turn</b>." } ],
+      dpr: "30 &mdash; 2 Fey Blades at 15 each, the first with Advantage after a Fey Step. Force damage is almost never resisted."
+    },
+    {
+      id: "fey-mirthful", name: "Fey Spirit (Mirthful)", type: "Small Fey, Neutral",
+      ac: "17", acCalc: "12 + spell level 5", hp: "50", hpCalc: "30 + 10 for each of the 2 levels above 3",
+      speed: "30 ft., Fly 30 ft.", abil: FEY_ABIL,
+      lines: [["Immunities","Charmed"],["Senses","Darkvision 60 ft., Passive Perception 10"],
+              ["Languages","Sylvan; understands the languages you know"],
+              ["CR","None (XP 0; PB equals your Proficiency Bonus)"]],
+      actions: [ multi("Fey Blade"),
+        { n: "Fey Blade", d: "<i>Melee Attack Roll:</i> <span class='hit'>+9</span>, reach 5 ft. <i>Hit:</i> <span class='hit'>2d6 + 8 (15) Force damage</span>. <span class='calc'>(2d6 + 3 + spell level 5)</span>" } ],
+      bonus: [ { n: "Fey Step (Mirthful)", d: "The spirit teleports up to 30 feet to an unoccupied space it can see. Then: <i>Wisdom Saving Throw:</i> <span class='hit'>DC 17</span>, one creature the spirit can see within 10 feet of itself. <i>Failure:</i> The target is Charmed by you and the spirit for 1 minute or until the target takes any damage." } ],
+      dpr: "30 &mdash; 2 Fey Blades at 15 each, or trade tempo for a DC 17 Charm each round."
+    },
+    {
+      id: "fey-tricksy", name: "Fey Spirit (Tricksy)", type: "Small Fey, Neutral",
+      ac: "17", acCalc: "12 + spell level 5", hp: "50", hpCalc: "30 + 10 for each of the 2 levels above 3",
+      speed: "30 ft., Fly 30 ft.", abil: FEY_ABIL,
+      lines: [["Immunities","Charmed"],["Senses","Darkvision 60 ft., Passive Perception 10"],
+              ["Languages","Sylvan; understands the languages you know"],
+              ["CR","None (XP 0; PB equals your Proficiency Bonus)"]],
+      actions: [ multi("Fey Blade"),
+        { n: "Fey Blade", d: "<i>Melee Attack Roll:</i> <span class='hit'>+9</span>, reach 5 ft. <i>Hit:</i> <span class='hit'>2d6 + 8 (15) Force damage</span>. <span class='calc'>(2d6 + 3 + spell level 5)</span>" } ],
+      bonus: [ { n: "Fey Step (Tricksy)", d: "The spirit teleports up to 30 feet to an unoccupied space it can see. Then it fills a 10-foot Cube within 5 feet of it with magical Darkness, which lasts until the end of its next turn." } ],
+      dpr: "30 &mdash; 2 Fey Blades at 15 each, plus a free 10-ft Darkness cube every round."
+    }
+  ]
+}
+];
+
+/* ------------------------------ rendering ------------------------------ */
+
+var ALL_SHEETS = {};
+ROWS.forEach(function (row) {
+    row.sheets.forEach(function (s) { s.row = row; ALL_SHEETS[s.id] = s; });
+});
+
+function entryList(title, items) {
+    if (!items || !items.length) return "";
+    var h = title ? '<div class="section-title">' + title + "</div>" : "";
+    items.forEach(function (e) {
+        h += '<div class="entry"><b>' + e.n + ".</b> " + e.d + "</div>";
+    });
+    return h;
+}
+
+function renderSheet(s) {
+    var h = '<div class="block" id="' + s.id + '" data-sheet="' + s.id + '" data-roll="' + s.row.roll + '">';
+    h += '<button class="permalink" data-copy="' + s.id + '" title="Copy a link to this sheet">&#128279;</button>';
+    h += "<h3>" + s.name + "</h3>";
+    h += '<div class="type">' + s.type + "</div>";
+    h += '<div class="rule"></div>';
+    h += '<div class="attr"><b>AC</b> ' + s.ac + ' <span class="calc">(' + s.acCalc + ")</span></div>";
+    h += '<div class="attr"><b>HP</b> ' + s.hp + ' <span class="calc">(' + s.hpCalc + ")</span></div>";
+    h += '<div class="attr"><b>Speed</b> ' + s.speed + "</div>";
+    h += '<div class="rule"></div>';
+
+    h += '<table class="abilities"><tr>';
+    s.abil.forEach(function (a) { h += "<th>" + a[0] + "</th>"; });
+    h += "</tr><tr>";
+    s.abil.forEach(function (a) { h += "<td>" + a[1] + " (" + a[2] + ")</td>"; });
+    h += "</tr><tr>";
+    s.abil.forEach(function (a) { h += '<td class="calc">save ' + a[2] + "</td>"; });
+    h += "</tr></table>";
+
+    h += '<div class="rule thin"></div>';
+    s.lines.forEach(function (l) {
+        h += '<div class="attr"><b>' + l[0] + "</b> " + l[1] + "</div>";
+    });
+    h += '<div class="rule"></div>';
+
+    h += entryList("Traits", s.traits);
+    h += entryList("Actions", s.actions);
+    h += entryList("Bonus Actions", s.bonus);
+    h += entryList("Reactions", s.reactions);
+
+    h += '<div class="dpr"><b>If every attack hits:</b> ' + s.dpr + "</div>";
+    h += "</div>";
+    return h;
+}
+
+function renderAll() {
+    var out = "";
+    ROWS.forEach(function (row) {
+        out += '<div class="group" data-roll="' + row.roll + '">';
+        out += '<div class="group-head"><span class="die">' + row.roll + "</span>";
+        out += "<h2>" + row.spell + "</h2>";
+        out += '<span class="note">' + row.note + " &middot; <i>" + row.casters + "</i></span></div>";
+        out += '<div class="sheets">' + row.sheets.map(renderSheet).join("") + "</div>";
+        out += "</div>";
+    });
+    document.getElementById("groups").innerHTML = out;
+
+    var bar = document.getElementById("roll-filter");
+    ROWS.forEach(function (row) {
+        var b = document.createElement("button");
+        b.setAttribute("data-roll", String(row.roll));
+        b.innerHTML = row.roll + " &middot; " + row.spell + ' <span class="n">(' + row.sheets.length + ")</span>";
+        bar.appendChild(b);
+    });
+}
+
+/* ------------------------------ filtering ------------------------------ */
+
+var state = { roll: "all", sheet: null };
+
+function apply() {
+    var blocks = document.querySelectorAll(".block");
+    var groups = document.querySelectorAll(".group");
+    var shown = 0;
+
+    for (var i = 0; i < blocks.length; i++) {
+        var b = blocks[i];
+        var ok = true;
+        if (state.sheet) ok = (b.dataset.sheet === state.sheet);
+        else if (state.roll !== "all") ok = (b.dataset.roll === state.roll);
+        b.classList.toggle("hidden", !ok);
+        b.classList.toggle("focused", !!state.sheet && ok);
+        if (ok) shown++;
+    }
+    for (var g = 0; g < groups.length; g++) {
+        var grp = groups[g];
+        grp.classList.toggle("hidden", grp.querySelectorAll(".block:not(.hidden)").length === 0);
+    }
+
+    var btns = document.querySelectorAll("#roll-filter button");
+    for (var k = 0; k < btns.length; k++) {
+        var active = !state.sheet && btns[k].dataset.roll === state.roll;
+        btns[k].classList.toggle("active", active);
+    }
+
+    document.getElementById("empty").classList.toggle("hidden", shown > 0);
+    renderStatus(shown);
+    syncUrl();
+}
+
+function renderStatus(shown) {
+    var el = document.getElementById("status");
+    if (!state.sheet && state.roll === "all") { el.className = "status hidden"; el.innerHTML = ""; return; }
+    var txt;
+    if (state.sheet) {
+        var s = ALL_SHEETS[state.sheet];
+        txt = "Focused on <b>" + s.name + "</b> (1d6 = " + s.row.roll + ", " + s.row.spell + ").";
+    } else {
+        var row = ROWS.filter(function (r) { return String(r.roll) === state.roll; })[0];
+        txt = "Showing 1d6 = <b>" + state.roll + "</b> &mdash; " + row.spell + " (" + shown + " sheet" + (shown === 1 ? "" : "s") + ").";
+    }
+    el.className = "status";
+    el.innerHTML = txt + ' <button class="ghost" id="status-clear">Clear filter</button>';
+    document.getElementById("status-clear").addEventListener("click", clearAll);
+}
+
+function syncUrl() {
+    var q = "";
+    if (state.sheet) q = "?sheet=" + state.sheet;
+    else if (state.roll !== "all") q = "?roll=" + state.roll;
+    history.replaceState(null, "", location.pathname + q);
+}
+
+function setRoll(roll) { state.sheet = null; state.roll = String(roll); apply(); }
+
+function setSheet(id) {
+    if (!ALL_SHEETS[id]) return false;
+    state.sheet = id;
+    state.roll = String(ALL_SHEETS[id].row.roll);
+    apply();
+    return true;
+}
+
+function clearAll() {
+    state.sheet = null;
+    state.roll = "all";
+    apply();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+/* ------------------------------ wiring ------------------------------ */
+
+renderAll();
+
+document.getElementById("roll-filter").addEventListener("click", function (e) {
+    var b = e.target.closest("button");
+    if (b) setRoll(b.dataset.roll);
+});
+
+document.getElementById("groups").addEventListener("click", function (e) {
+    var b = e.target.closest("button.permalink");
+    if (!b) return;
+    var url = location.origin + location.pathname + "?sheet=" + b.dataset.copy;
+    var done = function () { b.innerHTML = "&#10003;"; setTimeout(function () { b.innerHTML = "&#128279;"; }, 1200); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done, function () { prompt("Link to this sheet:", url); });
+    else prompt("Link to this sheet:", url);
+});
+
+document.getElementById("clear-filters").addEventListener("click", clearAll);
+document.getElementById("expand-all").addEventListener("click", clearAll);
+
+document.getElementById("roll-cube").addEventListener("click", function () {
+    var r = 1 + Math.floor(Math.random() * 6);
+    setRoll(r);
+    var g = document.querySelector('.group[data-roll="' + r + '"]');
+    if (g) g.scrollIntoView({ behavior: "smooth", block: "start" });
+});
+
+/* ---- initial state from the URL: ?sheet=<id> or ?roll=<1-6> ---- */
+(function initFromUrl() {
+    var p = new URLSearchParams(location.search);
+    var sheet = p.get("sheet");
+    var roll = p.get("roll");
+    if (sheet && setSheet(sheet.trim().toLowerCase())) {
+        var el = document.getElementById(state.sheet);
+        if (el) setTimeout(function () { el.scrollIntoView({ block: "center" }); }, 0);
+        return;
+    }
+    if (roll && /^[1-6]$/.test(roll.trim())) { setRoll(roll.trim()); return; }
+    apply();
+})();
+</script>
+</body>
+</html>
